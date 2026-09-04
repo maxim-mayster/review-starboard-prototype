@@ -15,8 +15,8 @@
     {
       "id": "f32f77f5-e82d-4946-9066-db0aaf464354",
       "name": "Mikita S.",
-      "stars": 0,
-      "reviewCount": 0
+      "stars": 1,
+      "reviewCount": 1
     },
     {
       "id": "4bbac33e-6a6d-42e1-a97f-60022b6d4725",
@@ -141,6 +141,11 @@
   ],
   "reviews": [
     {
+      "employeeId": "f32f77f5-e82d-4946-9066-db0aaf464354",
+      "platform": "Google",
+      "date": "2026-09-04T19:06:34.933Z"
+    },
+    {
       "employeeId": "681b5083-9c71-4ca2-88d9-33f40a6d22e3",
       "platform": "Google",
       "date": "2026-09-04T19:06:26.124Z"
@@ -152,5 +157,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:06:27.143Z"
+  "updatedAt": "2026-09-04T19:06:36.004Z"
 }
