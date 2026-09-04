@@ -113,6 +113,12 @@
       "name": "Denis D.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "a7b0265b-4156-4b51-8e62-b4c8b4b20c90",
+      "name": "Chase D.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -122,5 +128,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:03:03.419Z"
+  "updatedAt": "2026-09-04T19:03:22.712Z"
 }
