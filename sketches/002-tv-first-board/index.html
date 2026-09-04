@@ -123,14 +123,20 @@
       padding: 24px;
       display: grid;
       gap: 16px;
-      align-content: start;
+      align-content: stretch;
       min-height: 0;
+    }
+    .rightcol > div {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100%;
     }
     .list {
       padding: 10px 0 0;
       display: grid;
       gap: 12px;
-      align-content: start;
+      align-content: stretch;
+      min-height: 100%;
       opacity: 1;
       transform: translateY(0);
       transition: opacity .45s ease, transform .45s ease;
@@ -144,6 +150,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 14px 18px;
       align-content: start;
+      min-height: 100%;
     }
     .row {
       display: grid;
