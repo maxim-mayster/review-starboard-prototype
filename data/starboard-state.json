@@ -17,6 +17,12 @@
       "name": "Mikita S.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "4bbac33e-6a6d-42e1-a97f-60022b6d4725",
+      "name": "Esther V.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -26,5 +32,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:00:02.557Z"
+  "updatedAt": "2026-09-04T19:00:09.988Z"
 }
