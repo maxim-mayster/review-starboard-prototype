@@ -53,6 +53,12 @@
       "name": "Adriel K.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "2cb9f6cd-70b9-4730-bbaf-b4775398c2b6",
+      "name": "Joe H.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -62,5 +68,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:00:57.170Z"
+  "updatedAt": "2026-09-04T19:01:03.070Z"
 }
