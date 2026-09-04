@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Starboard — TV Mode</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --brand-bg: radial-gradient(circle at top, #18345b 0%, #081322 56%, #050b14 100%);
+      --uploaded-bg: none;
+      --bg-blur: 8px;
+      --overlay-opacity: 0.35;
+    }
+    body {
+      margin: 0;
+      color: #f7fbff;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: #050b14;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -30px;
+      background-image: var(--uploaded-bg), var(--brand-bg);
+      background-size: cover, cover;
+      background-position: center, center;
+      filter: blur(var(--bg-blur));
+      transform: scale(1.06);
+      z-index: 0;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(4, 11, 21, calc(var(--overlay-opacity) * 0.7)),
+        rgba(4, 11, 21, var(--overlay-opacity))
+      );
+      z-index: 0;
+    }
+    .wrap {
+      position: relative;
+      z-index: 1;
+      padding: 30px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 22px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      color: #f7fbff;
+      font-weight: 900;
+      font-size: clamp(44px, 5vw, 82px);
+      line-height: .95;
+      letter-spacing: -0.05em;
+    }
+    .logo {
+      max-width: min(40vw, 460px);
+      max-height: 120px;
+      object-fit: contain;
+      display: none;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,.25));
+    }
+    .month {
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      padding: 18px 28px;
+      font-weight: 900;
+      font-size: clamp(24px, 2.4vw, 40px);
+      backdrop-filter: blur(14px);
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+    }
+    .panel {
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 28px 60px rgba(0,0,0,.28);
+      backdrop-filter: blur(14px);
+    }
+    .podium {
+      padding: 28px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      align-items: end;
+      min-height: 360px;
+    }
+    .podium-card {
+      border-radius: 24px;
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.08);
+      text-align: center;
+    }
+    .podium-card.first { min-height: 300px; border-color: rgba(255,198,71,.55); }
+    .podium-card.second { min-height: 250px; }
+    .podium-card.third { min-height: 220px; }
+    .rank {
+      width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.13); font-size: 24px; font-weight: 900;
+    }
+    .name { font-size: clamp(22px, 2.2vw, 34px); font-weight: 900; letter-spacing: -0.03em; }
+    .score { margin-top: 18px; font-size: clamp(34px, 3vw, 54px); font-weight: 900; color: #ffc64a; }
+    .rightcol {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+    .list { padding: 10px 0 0; }
+    .row {
+      display: grid;
+      grid-template-columns: 60px 1fr 100px;
+      align-items: center;
+      padding: 16px 4px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      gap: 10px;
+      font-size: 20px;
+    }
+    .row:last-child { border-bottom: 0; }
+    .badge {
+      width: 44px; height: 44px; border-radius: 50%;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(255,255,255,.1); font-weight: 900;
+    }
+    @media (max-width: 1100px) {
+      .hero { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 50px 1fr 80px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <img id="brandLogo" class="logo" alt="Brand logo" />
+        <div class="brand" id="brandText">Mayster Heating & Air</div>
+      </div>
+      <div class="month" id="monthLabel">September 2026</div>
+    </div>
+
+    <div class="hero">
+      <section class="panel podium" id="podium"></section>
+      <aside class="panel rightcol">
+        <div>
+          <div class="list" id="fullList"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      employees: 'review-starboard-employees',
+      background: 'review-starboard-tv-bg',
+      logo: 'review-starboard-tv-logo',
+      blur: 'review-starboard-tv-blur',
+      overlay: 'review-starboard-tv-overlay'
+    };
+
+    const fallbackEmployees = [
+      { id: 'fallback-1', name: 'Brandon R.', stars: 7, reviewCount: 6 },
+      { id: 'fallback-2', name: 'Marcus J.', stars: 5, reviewCount: 5 },
+      { id: 'fallback-3', name: 'Alyssa M.', stars: 4, reviewCount: 4 }
+    ];
+
+    let employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || structuredClone(fallbackEmployees);
+
+    function save() {
+      localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
+    }
+
+    function applyBranding() {
+      const savedBg = localStorage.getItem(STORAGE_KEYS.background);
+      const savedLogo = localStorage.getItem(STORAGE_KEYS.logo);
+      const savedBlur = Number(localStorage.getItem(STORAGE_KEYS.blur) || 8);
+      const savedOverlay = Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35) / 100;
+      if (savedBg) {
+        document.documentElement.style.setProperty('--uploaded-bg', `url(${savedBg})`);
+      } else {
+        document.documentElement.style.setProperty('--uploaded-bg', 'none');
+      }
+      document.documentElement.style.setProperty('--bg-blur', `${savedBlur}px`);
+      document.documentElement.style.setProperty('--overlay-opacity', String(savedOverlay));
+
+      const logo = document.getElementById('brandLogo');
+      const text = document.getElementById('brandText');
+      if (savedLogo) {
+        logo.src = savedLogo;
+        logo.style.display = 'block';
+        text.style.display = 'none';
+      } else {
+        logo.removeAttribute('src');
+        logo.style.display = 'none';
+        text.style.display = 'block';
+      }
+    }
+
+    function list() {
+      return [...employees].sort((a,b) => b.stars - a.stars || a.name.localeCompare(b.name));
+    }
+
+    function render() {
+      employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || employees;
+      applyBranding();
+      const sorted = list();
+      const podium = sorted.slice(0, 3);
+      document.getElementById('podium').innerHTML = podium.map((p, i) => `
+        <div class="podium-card ${['first','second','third'][i] || ''}">
+          <div class="rank">${i + 1}</div>
+          <div class="name">${escapeHtml(p.name)}</div>
+          <div class="score">${p.stars} ★</div>
+        </div>
+      `).join('') || '<div class="name">No employees yet</div>';
+
+      document.getElementById('fullList').innerHTML = sorted.map((p, i) => `
+        <div class="row">
+          <div class="badge">${i + 1}</div>
+          <div><strong>${escapeHtml(p.name)}</strong></div>
+          <div style="font-weight:900; color:#ffc64a;">${p.stars} ★</div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+    window.addEventListener('storage', render);
+    render();
+  </script>
+</body>
+</html>

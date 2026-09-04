@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Starboard Prototype Gallery</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #eff4fa;
+      color: #132238;
+      padding: 32px;
+    }
+    h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: -0.04em; }
+    p { color: #546b84; font-size: 18px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 28px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #dbe4ee;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 12px 35px rgba(13, 33, 54, .08);
+    }
+    .label {
+      display: inline-flex;
+      border-radius: 999px;
+      background: #e9f1fb;
+      color: #17416d;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+    .shot {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 18px;
+      border: 1px solid #dce6f0;
+      overflow: hidden;
+      margin: 16px 0;
+      background: linear-gradient(135deg, #17385f, #f36f21);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 26px;
+      font-weight: 800;
+      text-align: center;
+      padding: 20px;
+    }
+    a.button {
+      display: inline-block;
+      text-decoration: none;
+      background: #f36f21;
+      color: white;
+      font-weight: 800;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+    ul { color: #445a73; padding-left: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>Review Starboard</h1>
+  <p>Two working mockups for replacing the printed review star sheets with a digital system.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Variant 1</div>
+      <h2>Shop admin board</h2>
+      <div class="shot">Log reviews + view the leaderboard on one screen</div>
+      <ul>
+        <li>Add a star to any employee</li>
+        <li>Filter by store</li>
+        <li>See recent review activity</li>
+        <li>Preview a TV module on the same page</li>
+      </ul>
+      <a class="button" href="./sketches/001-shop-admin-board/index.html">Open this version</a>
+    </div>
+
+    <div class="card">
+      <div class="label">Variant 2</div>
+      <h2>TV-first board</h2>
+      <div class="shot" style="background: linear-gradient(135deg, #081322, #224a7a);">Big-screen leaderboard built for the shop TV</div>
+      <ul>
+        <li>Large top-3 podium</li>
+        <li>Full rankings visible at once</li>
+        <li>Store filter toggle</li>
+        <li>Easy to read from across the room</li>
+      </ul>
+      <a class="button" href="./sketches/002-tv-first-board/index.html">Open this version</a>
+    </div>
+  </div>
+</body>
+</html>

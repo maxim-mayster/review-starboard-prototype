@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Starboard — Admin Board</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f6fb;
+      color: #122033;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: linear-gradient(180deg, #16365f, #0f2745);
+      color: white;
+      padding: 24px;
+    }
+    .brand {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin: 0 0 6px;
+    }
+    .muted { color: rgba(255,255,255,.75); }
+    .stats {
+      display: grid;
+      gap: 12px;
+      margin: 26px 0 20px;
+    }
+    .stat {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .stat strong { display: block; font-size: 28px; margin-top: 6px; }
+    .panel {
+      background: white;
+      border-radius: 18px;
+      border: 1px solid #dde6f0;
+      box-shadow: 0 12px 30px rgba(16, 35, 57, .08);
+    }
+    .review-form, .employee-manager, .tv-settings {
+      margin-top: 18px;
+      padding: 18px;
+    }
+    .review-form h3, .employee-manager h3, .tv-settings h3 { margin: 0 0 14px; }
+    .field { margin-bottom: 12px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #46607d;
+      margin-bottom: 6px;
+    }
+    input, select, button {
+      font: inherit;
+    }
+    input, select {
+      width: 100%;
+      border: 1px solid #cfdae7;
+      border-radius: 12px;
+      padding: 12px 13px;
+      background: #f9fbfd;
+    }
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 800;
+    }
+    .primary { background: #f36f21; color: white; }
+    .ghost { background: #e8f0f8; color: #17385f; }
+    .danger { background: #fff0f0; color: #b63c32; }
+    .main {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+      grid-template-rows: auto auto 1fr;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .toolbar h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: -0.04em;
+    }
+    .toolbar p { margin: 6px 0 0; color: #5e738b; }
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .summary-card { padding: 18px; }
+    .summary-card .label { color: #698199; font-size: 13px; font-weight: 700; }
+    .summary-card .value { font-size: 30px; font-weight: 800; margin-top: 8px; }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.45fr .85fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .leaderboard { padding: 18px; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid #e7eef6;
+    }
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #6a7f96;
+    }
+    .rank {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      background: #edf4fb;
+      color: #16365f;
+    }
+    .star-count {
+      font-size: 26px;
+      font-weight: 800;
+      color: #f36f21;
+    }
+    .pill {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .google { background: #e7f0ff; color: #1a55c7; }
+    .facebook { background: #e8efff; color: #3056d3; }
+    .yelp { background: #ffe9e9; color: #c7392f; }
+    .employee-list {
+      display: grid;
+      gap: 10px;
+      max-height: 270px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .employee-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #e5edf5;
+      border-radius: 14px;
+      background: #fbfdff;
+    }
+    .employee-row input {
+      background: white;
+      padding: 10px 12px;
+    }
+    .employee-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tv-settings .upload-row {
+      display: grid;
+      gap: 10px;
+    }
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #e8f0f8;
+      color: #17385f;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid #cfdae7;
+    }
+    .upload-label input { display: none; }
+    .preview-note { color: #5e738b; font-size: 13px; }
+    .slider-wrap {
+      display: grid;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .slider-wrap input[type="range"] {
+      width: 100%;
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }
+    .slider-value {
+      font-size: 12px;
+      color: #5e738b;
+      font-weight: 700;
+    }
+    .big-screen {
+      background: #112947;
+      color: white;
+      border-radius: 18px;
+      padding: 18px;
+    }
+    .big-screen-board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .big-entry {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .big-entry strong { display: block; font-size: 22px; margin-bottom: 6px; }
+    .small { font-size: 13px; color: #68809a; }
+    .tv-logo-preview {
+      max-width: 100%;
+      max-height: 90px;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 1200px) {
+      .app, .content-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div>
+        <div class="brand">Review Starboard</div>
+        <div class="muted">Simple admin controls for monthly employee review stars.</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="muted">Current month</div>
+          <strong id="monthLabel">September 2026</strong>
+        </div>
+        <div class="stat">
+          <div class="muted">Reviews logged</div>
+          <strong id="reviewCount">0</strong>
+        </div>
+        <div class="stat">
+          <div class="muted">Employees on board</div>
+          <strong id="employeeCount">0</strong>
+        </div>
+      </div>
+
+      <div class="panel review-form">
+        <h3>Add a star</h3>
+        <div class="field">
+          <label for="employee">Employee</label>
+          <select id="employee"></select>
+        </div>
+        <div class="field">
+          <label for="platform">Platform</label>
+          <select id="platform">
+            <option>Google</option>
+            <option>Facebook</option>
+            <option>Yelp</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="primary" id="addReview">Add star</button>
+          <button class="ghost" id="resetDemo">Reset demo</button>
+        </div>
+      </div>
+
+      <div class="panel employee-manager">
+        <h3>Manage employees</h3>
+        <div class="field">
+          <label for="newEmployeeName">Add employee</label>
+          <input id="newEmployeeName" placeholder="Type a new employee name" />
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:14px;">
+          <button class="primary" id="addEmployee">Add employee</button>
+        </div>
+        <div id="employeeList" class="employee-list"></div>
+      </div>
+
+      <div class="panel tv-settings">
+        <h3>TV board branding</h3>
+        <div class="upload-row">
+          <div>
+            <label>Background image</label>
+            <label class="upload-label">Upload TV background
+              <input type="file" id="bgUpload" accept="image/*" />
+            </label>
+          </div>
+          <div>
+            <label>Logo for TV board</label>
+            <label class="upload-label">Upload TV logo
+              <input type="file" id="logoUpload" accept="image/*" />
+            </label>
+          </div>
+          <div>
+            <label for="blurAmount">Background blur</label>
+            <div class="slider-wrap">
+              <input type="range" id="blurAmount" min="0" max="24" step="1" />
+              <div class="slider-value" id="blurAmountValue">8px</div>
+            </div>
+          </div>
+          <div>
+            <label for="overlayAmount">Dark overlay</label>
+            <div class="slider-wrap">
+              <input type="range" id="overlayAmount" min="0" max="80" step="1" />
+              <div class="slider-value" id="overlayAmountValue">35%</div>
+            </div>
+          </div>
+          <div class="employee-actions">
+            <button class="ghost" id="clearBg">Clear background</button>
+            <button class="ghost" id="clearLogo">Clear logo</button>
+          </div>
+          <div class="preview-note">These uploads and blur settings are saved in the browser so the TV board keeps them after reload.</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="toolbar">
+        <div>
+          <h1>Mayster Heating & Air</h1>
+          <p>Editable employee list plus the monthly leaderboard that stays saved after refresh.</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="primary">End month + archive</button>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <div class="panel summary-card"><div class="label">Top performer</div><div class="value" id="topPerformer">—</div></div>
+        <div class="panel summary-card"><div class="label">Google reviews</div><div class="value" id="googleCount">0</div></div>
+        <div class="panel summary-card"><div class="label">Facebook reviews</div><div class="value" id="facebookCount">0</div></div>
+        <div class="panel summary-card"><div class="label">Yelp reviews</div><div class="value" id="yelpCount">0</div></div>
+        <div class="panel summary-card"><div class="label">TV assets</div><div class="value" id="tvAssetStatus">Ready</div></div>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel leaderboard">
+          <div class="section-head">
+            <div>
+              <strong style="font-size:22px;">Monthly leaderboard</strong>
+              <div class="small">One star per review that mentions an employee by name.</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Employee</th>
+                <th>Stars</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+
+        <div style="display:grid; gap:20px;">
+          <div class="big-screen">
+            <div>
+              <img id="tvLogoPreview" class="tv-logo-preview" alt="TV logo preview" style="display:none;" />
+              <div class="small" style="color:rgba(255,255,255,.7);">TV preview</div>
+              <strong style="font-size:26px; display:block; margin-top:6px;">Top 3 this month</strong>
+            </div>
+            <div class="big-screen-board" id="tvPreview"></div>
+            <div style="margin-top:12px;">
+              <span class="pill google">Google</span>
+              <span class="pill facebook">Facebook</span>
+              <span class="pill yelp">Yelp</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      employees: 'review-starboard-employees',
+      reviews: 'review-starboard-reviews',
+      background: 'review-starboard-tv-bg',
+      logo: 'review-starboard-tv-logo',
+      blur: 'review-starboard-tv-blur',
+      overlay: 'review-starboard-tv-overlay'
+    };
+
+    const defaultEmployees = [
+      { id: crypto.randomUUID(), name: 'Brandon R.', stars: 7, reviewCount: 6 },
+      { id: crypto.randomUUID(), name: 'Marcus J.', stars: 5, reviewCount: 5 },
+      { id: crypto.randomUUID(), name: 'Alyssa M.', stars: 4, reviewCount: 4 },
+      { id: crypto.randomUUID(), name: 'Monica V.', stars: 4, reviewCount: 4 },
+      { id: crypto.randomUUID(), name: 'Chris T.', stars: 3, reviewCount: 3 }
+    ];
+
+    const defaultReviews = [
+      { employeeId: defaultEmployees[0].id, platform: 'Google' },
+      { employeeId: defaultEmployees[1].id, platform: 'Facebook' },
+      { employeeId: defaultEmployees[2].id, platform: 'Google' },
+      { employeeId: defaultEmployees[3].id, platform: 'Yelp' },
+      { employeeId: defaultEmployees[0].id, platform: 'Google' }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    let state = loadState();
+
+    function loadState() {
+      const employees = (JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || structuredClone(defaultEmployees))
+        .map(employee => ({
+          ...employee,
+          reviewCount: Number.isFinite(employee.reviewCount) ? employee.reviewCount : employee.stars
+        }));
+      const reviews = JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || 'null') || structuredClone(defaultReviews);
+      return { employees, reviews };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(state.employees));
+      localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(state.reviews));
+    }
+
+    function sortedEmployees() {
+      return [...state.employees].sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
+    }
+
+    function renderEmployeeOptions() {
+      const employees = sortedEmployees();
+      $('employee').innerHTML = employees.length
+        ? employees.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('')
+        : '<option value="">No employees yet</option>';
+      $('employee').disabled = employees.length === 0;
+      $('addReview').disabled = employees.length === 0;
+    }
+
+    function renderEmployeeManager() {
+      $('employeeList').innerHTML = state.employees.length
+        ? state.employees.map(employee => `
+          <div class="employee-row">
+            <input data-employee-name="${employee.id}" value="${escapeAttribute(employee.name)}" />
+            <button class="ghost" data-save-employee="${employee.id}">Save</button>
+            <button class="danger" data-remove-employee="${employee.id}">Remove</button>
+          </div>
+        `).join('')
+        : '<div class="preview-note">No employees yet. Add your first employee above.</div>';
+
+      document.querySelectorAll('[data-save-employee]').forEach(btn => {
+        btn.addEventListener('click', () => saveEmployeeName(btn.dataset.saveEmployee));
+      });
+      document.querySelectorAll('[data-remove-employee]').forEach(btn => {
+        btn.addEventListener('click', () => removeEmployee(btn.dataset.removeEmployee));
+      });
+      document.querySelectorAll('[data-employee-name]').forEach(input => {
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') saveEmployeeName(input.dataset.employeeName);
+        });
+      });
+    }
+
+    function renderBoard() {
+      const employees = sortedEmployees();
+      $('leaderboardBody').innerHTML = employees.map((e, i) => `
+        <tr>
+          <td><span class="rank">${i + 1}</span></td>
+          <td><strong>${escapeHtml(e.name)}</strong></td>
+          <td class="star-count">${'★'.repeat(Math.min(e.stars, 8))}<span style="font-size:16px; color:#122033; margin-left:8px;">${e.stars}</span></td>
+        </tr>
+      `).join('');
+
+      const top3 = employees.slice(0, 3);
+      $('tvPreview').innerHTML = top3.map((e, i) => `
+        <div class="big-entry">
+          <div class="small" style="color:rgba(255,255,255,.7);">#${i+1}</div>
+          <strong>${escapeHtml(e.name)}</strong>
+          <div style="font-size:34px; font-weight:800; color:#ffbf47;">${e.stars} ★</div>
+        </div>
+      `).join('') || '<div class="small" style="color:rgba(255,255,255,.7);">No employees added yet.</div>';
+
+      $('topPerformer').textContent = employees[0]?.name || '—';
+      $('googleCount').textContent = state.reviews.filter(r => r.platform === 'Google').length;
+      $('facebookCount').textContent = state.reviews.filter(r => r.platform === 'Facebook').length;
+      $('yelpCount').textContent = state.reviews.filter(r => r.platform === 'Yelp').length;
+      $('reviewCount').textContent = state.reviews.length;
+      $('employeeCount').textContent = state.employees.length;
+      const hasBg = !!localStorage.getItem(STORAGE_KEYS.background);
+      const hasLogo = !!localStorage.getItem(STORAGE_KEYS.logo);
+      $('tvAssetStatus').textContent = `${hasBg ? 'BG' : 'No BG'} / ${hasLogo ? 'Logo' : 'Text'}`;
+      renderTvSettings();
+      renderLogoPreview();
+    }
+
+    function renderTvSettings() {
+      const blur = Number(localStorage.getItem(STORAGE_KEYS.blur) || 8);
+      const overlay = Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35);
+      $('blurAmount').value = String(blur);
+      $('overlayAmount').value = String(overlay);
+      $('blurAmountValue').textContent = `${blur}px`;
+      $('overlayAmountValue').textContent = `${overlay}%`;
+    }
+
+    function addEmployee() {
+      const name = $('newEmployeeName').value.trim();
+      if (!name) return;
+      state.employees.push({ id: crypto.randomUUID(), name, stars: 0, reviewCount: 0 });
+      $('newEmployeeName').value = '';
+      saveState();
+      rerender();
+    }
+
+    function saveEmployeeName(id) {
+      const input = document.querySelector(`[data-employee-name="${id}"]`);
+      if (!input) return;
+      const name = input.value.trim();
+      if (!name) return;
+      const employee = state.employees.find(e => e.id === id);
+      if (!employee) return;
+      employee.name = name;
+      saveState();
+      rerender();
+    }
+
+    function removeEmployee(id) {
+      state.employees = state.employees.filter(e => e.id !== id);
+      state.reviews = state.reviews.filter(r => r.employeeId !== id);
+      saveState();
+      rerender();
+    }
+
+    function renderLogoPreview() {
+      const logo = localStorage.getItem(STORAGE_KEYS.logo);
+      const img = $('tvLogoPreview');
+      if (logo) {
+        img.src = logo;
+        img.style.display = 'block';
+      } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+      }
+    }
+
+    function handleAssetUpload(inputId, storageKey) {
+      const file = $(inputId).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        localStorage.setItem(storageKey, reader.result);
+        renderBoard();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function rerender() {
+      renderEmployeeOptions();
+      renderEmployeeManager();
+      renderBoard();
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+
+    $('addReview').addEventListener('click', () => {
+      const employeeId = $('employee').value;
+      const platform = $('platform').value;
+      const employee = state.employees.find(e => e.id === employeeId);
+      if (!employee) return;
+      const starsToAdd = employee.reviewCount >= 5 ? 2 : 1;
+      employee.reviewCount += 1;
+      employee.stars += starsToAdd;
+      state.reviews.unshift({ employeeId: employee.id, platform });
+      saveState();
+      rerender();
+    });
+
+    $('resetDemo').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEYS.employees);
+      localStorage.removeItem(STORAGE_KEYS.reviews);
+      state = { employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews) };
+      saveState();
+      rerender();
+    });
+
+    $('addEmployee').addEventListener('click', addEmployee);
+    $('newEmployeeName').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') addEmployee();
+    });
+    $('bgUpload').addEventListener('change', () => handleAssetUpload('bgUpload', STORAGE_KEYS.background));
+    $('logoUpload').addEventListener('change', () => handleAssetUpload('logoUpload', STORAGE_KEYS.logo));
+    $('blurAmount').addEventListener('input', () => {
+      const value = $('blurAmount').value;
+      localStorage.setItem(STORAGE_KEYS.blur, value);
+      $('blurAmountValue').textContent = `${value}px`;
+    });
+    $('overlayAmount').addEventListener('input', () => {
+      const value = $('overlayAmount').value;
+      localStorage.setItem(STORAGE_KEYS.overlay, value);
+      $('overlayAmountValue').textContent = `${value}%`;
+    });
+    $('clearBg').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEYS.background);
+      $('bgUpload').value = '';
+      renderBoard();
+    });
+    $('clearLogo').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEYS.logo);
+      $('logoUpload').value = '';
+      renderBoard();
+    });
+
+    rerender();
+  </script>
+</body>
+</html>
