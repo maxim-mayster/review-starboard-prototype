@@ -61,12 +61,6 @@
       "reviewCount": 0
     },
     {
-      "id": "8f28bab0-73f0-46c3-9ba3-9186e39b6fd2",
-      "name": "Kaleb P.",
-      "stars": 0,
-      "reviewCount": 0
-    },
-    {
       "id": "906016ea-38ed-4f9d-8215-7d9895376a9e",
       "name": "Ken H.",
       "stars": 0,
@@ -167,5 +161,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:14:57.028Z"
+  "updatedAt": "2026-09-04T21:10:16.792Z"
 }
