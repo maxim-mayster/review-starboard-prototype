@@ -214,6 +214,7 @@
     };
     let currentPage = 0;
     let pageTimer = null;
+    let activePageCount = 0;
 
     function saveLocalCopy() {
       localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
@@ -294,7 +295,12 @@
     }
 
     function startPaging(pageCount) {
-      if (pageTimer) clearInterval(pageTimer);
+      if (activePageCount === pageCount && pageTimer) return;
+      activePageCount = pageCount;
+      if (pageTimer) {
+        clearInterval(pageTimer);
+        pageTimer = null;
+      }
       if (pageCount <= 1) return;
       pageTimer = setInterval(() => {
         currentPage = (currentPage + 1) % pageCount;
