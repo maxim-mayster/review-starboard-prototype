@@ -5,6 +5,12 @@
       "name": "David M.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "2226e8ea-8ab8-4b00-9c62-a4625633e2ad",
+      "name": "Daniil M.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -14,5 +20,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T18:59:48.668Z"
+  "updatedAt": "2026-09-04T18:59:54.481Z"
 }
