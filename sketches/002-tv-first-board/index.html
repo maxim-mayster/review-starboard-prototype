@@ -131,6 +131,13 @@
       display: grid;
       gap: 12px;
       align-content: start;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity .45s ease, transform .45s ease;
+    }
+    .list.is-changing {
+      opacity: 0;
+      transform: translateY(12px);
     }
     .list-grid {
       display: grid;
@@ -161,10 +168,23 @@
       letter-spacing: .04em;
       text-transform: uppercase;
     }
+    @media (max-width: 1366px) {
+      .hero { grid-template-columns: 1fr .95fr; }
+      .rightcol { padding: 28px; }
+      .list-grid { grid-template-columns: 1fr; gap: 16px; }
+      .row {
+        grid-template-columns: 62px 1fr 96px;
+        padding: 18px 12px;
+        font-size: 30px;
+        border-radius: 22px;
+      }
+      .badge { width: 50px; height: 50px; font-size: 22px; }
+      .page-status { font-size: 16px; }
+    }
     @media (max-width: 1100px) {
       .hero { grid-template-columns: 1fr; }
       .list-grid { grid-template-columns: 1fr; }
-      .row { grid-template-columns: 50px 1fr 80px; font-size: 22px; }
+      .row { grid-template-columns: 58px 1fr 90px; font-size: 28px; padding: 16px 12px; }
     }
   </style>
 </head>
@@ -286,7 +306,7 @@
     }
 
     function pageSizeFor(count) {
-      if (window.innerWidth <= 1100) return 8;
+      if (window.innerWidth <= 1366) return 8;
       if (count <= 12) return 12;
       if (count <= 20) return 16;
       return 18;
@@ -297,8 +317,13 @@
       const pageSize = pageSizeFor(sorted.length);
       const pageCount = chunk(sorted, pageSize).length;
       if (pageCount <= 1) return;
-      currentPage = (currentPage + 1) % pageCount;
-      render();
+      const fullList = document.getElementById('fullList');
+      fullList.classList.add('is-changing');
+      setTimeout(() => {
+        currentPage = (currentPage + 1) % pageCount;
+        render();
+        requestAnimationFrame(() => fullList.classList.remove('is-changing'));
+      }, 450);
     }
 
     function render() {
