@@ -213,8 +213,6 @@
       overlay: Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35)
     };
     let currentPage = 0;
-    let pageTimer = null;
-    let activePageCount = 0;
 
     function saveLocalCopy() {
       localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
@@ -294,18 +292,13 @@
       return 18;
     }
 
-    function startPaging(pageCount) {
-      if (activePageCount === pageCount && pageTimer) return;
-      activePageCount = pageCount;
-      if (pageTimer) {
-        clearInterval(pageTimer);
-        pageTimer = null;
-      }
+    function advancePage() {
+      const sorted = list();
+      const pageSize = pageSizeFor(sorted.length);
+      const pageCount = chunk(sorted, pageSize).length;
       if (pageCount <= 1) return;
-      pageTimer = setInterval(() => {
-        currentPage = (currentPage + 1) % pageCount;
-        render();
-      }, 10000);
+      currentPage = (currentPage + 1) % pageCount;
+      render();
     }
 
     function render() {
@@ -337,7 +330,6 @@
       document.getElementById('pageStatus').textContent = pages.length > 1
         ? `Showing ${currentPage + 1} of ${pages.length}`
         : `${sorted.length} employees`;
-      startPaging(pages.length);
     }
 
     function escapeHtml(value) {
@@ -353,6 +345,7 @@
     render();
     loadCloudState();
     setInterval(loadCloudState, 5000);
+    setInterval(advancePage, 10000);
   </script>
 </body>
 </html>
