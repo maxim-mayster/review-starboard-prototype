@@ -276,10 +276,10 @@
             <input id="adminPin" type="password" inputmode="numeric" placeholder="Enter PIN to save changes" />
           </div>
           <div class="employee-actions">
-            <button class="ghost" id="savePin">Unlock saves</button>
-            <button class="ghost" id="pushLocalData">Push this device to cloud</button>
+            <button class="ghost" id="savePin">Turn on auto-save</button>
+            <button class="ghost" id="pushLocalData">One-time copy this device to cloud</button>
           </div>
-          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading shared cloud data…</div>
+          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading shared cloud data… After the PIN is unlocked once, changes auto-save in the background.</div>
         </div>
       </div>
 
@@ -521,7 +521,7 @@
     async function saveCloudState(showSaved = true) {
       const pin = adminPin();
       if (!pin) {
-        setSyncStatus('Enter the admin PIN, then click Unlock saves. Your changes are still saved on this device until unlocked.');
+        setSyncStatus('Enter the admin PIN, then click Turn on auto-save. Your changes are still saved on this device until unlocked.');
         return false;
       }
       saveLocalState();
@@ -553,7 +553,7 @@
         if (hasSavedDeviceData()) {
           state = loadLocalState();
           rerender();
-          setSyncStatus('This device already has saved setup data. If this is the correct board, enter the PIN and click “Push this device to cloud” so every device matches it.');
+          setSyncStatus('This device already has saved setup data. If this is the correct board, enter the PIN and click “One-time copy this device to cloud” once. After that, new changes auto-save.');
           return;
         }
         state = cloudState;
