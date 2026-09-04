@@ -1,24 +1,6 @@
 {
   "employees": [
     {
-      "id": "brandon-r",
-      "name": "Brandon R.",
-      "stars": 7,
-      "reviewCount": 6
-    },
-    {
-      "id": "marcus-j",
-      "name": "Marcus J.",
-      "stars": 5,
-      "reviewCount": 5
-    },
-    {
-      "id": "alyssa-m",
-      "name": "Alyssa M.",
-      "stars": 4,
-      "reviewCount": 4
-    },
-    {
       "id": "monica-v",
       "name": "Monica V.",
       "stars": 4,
@@ -33,24 +15,8 @@
   ],
   "reviews": [
     {
-      "employeeId": "brandon-r",
-      "platform": "Google"
-    },
-    {
-      "employeeId": "marcus-j",
-      "platform": "Facebook"
-    },
-    {
-      "employeeId": "alyssa-m",
-      "platform": "Google"
-    },
-    {
       "employeeId": "monica-v",
       "platform": "Yelp"
-    },
-    {
-      "employeeId": "brandon-r",
-      "platform": "Google"
     }
   ],
   "settings": {
@@ -59,5 +25,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T18:59:25.062Z"
+  "updatedAt": "2026-09-04T18:59:28.041Z"
 }
