@@ -119,6 +119,12 @@
       "name": "Chase D.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "aa5226ac-e2c9-44c4-8146-af0c0cf9e533",
+      "name": "Darin V.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -128,5 +134,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:03:22.712Z"
+  "updatedAt": "2026-09-04T19:04:29.411Z"
 }
