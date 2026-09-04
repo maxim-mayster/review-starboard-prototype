@@ -124,25 +124,46 @@
       display: grid;
       gap: 16px;
       align-content: start;
+      min-height: 0;
     }
-    .list { padding: 10px 0 0; }
+    .list {
+      padding: 10px 0 0;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .list-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 18px;
+      align-content: start;
+    }
     .row {
       display: grid;
       grid-template-columns: 60px 1fr 100px;
       align-items: center;
-      padding: 16px 4px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 14px 6px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
       gap: 10px;
-      font-size: 20px;
+      font-size: 18px;
     }
-    .row:last-child { border-bottom: 0; }
     .badge {
       width: 44px; height: 44px; border-radius: 50%;
       display:flex; align-items:center; justify-content:center;
       background: rgba(255,255,255,.1); font-weight: 900;
     }
+    .page-status {
+      color: rgba(255,255,255,.72);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
     @media (max-width: 1100px) {
       .hero { grid-template-columns: 1fr; }
+      .list-grid { grid-template-columns: 1fr; }
       .row { grid-template-columns: 50px 1fr 80px; font-size: 16px; }
     }
   </style>
@@ -161,6 +182,7 @@
       <section class="panel podium" id="podium"></section>
       <aside class="panel rightcol">
         <div>
+          <div class="page-status" id="pageStatus"></div>
           <div class="list" id="fullList"></div>
         </div>
       </aside>
@@ -183,6 +205,8 @@
     ];
 
     let employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || structuredClone(fallbackEmployees);
+    let currentPage = 0;
+    let pageTimer = null;
 
     function save() {
       localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
@@ -218,6 +242,28 @@
       return [...employees].sort((a,b) => b.stars - a.stars || a.name.localeCompare(b.name));
     }
 
+    function chunk(list, size) {
+      const pages = [];
+      for (let i = 0; i < list.length; i += size) pages.push(list.slice(i, i + size));
+      return pages;
+    }
+
+    function pageSizeFor(count) {
+      if (window.innerWidth <= 1100) return 8;
+      if (count <= 12) return 12;
+      if (count <= 20) return 16;
+      return 18;
+    }
+
+    function startPaging(pageCount) {
+      if (pageTimer) clearInterval(pageTimer);
+      if (pageCount <= 1) return;
+      pageTimer = setInterval(() => {
+        currentPage = (currentPage + 1) % pageCount;
+        render();
+      }, 6000);
+    }
+
     function render() {
       employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || employees;
       applyBranding();
@@ -231,13 +277,24 @@
         </div>
       `).join('') || '<div class="name">No employees yet</div>';
 
-      document.getElementById('fullList').innerHTML = sorted.map((p, i) => `
-        <div class="row">
-          <div class="badge">${i + 1}</div>
-          <div><strong>${escapeHtml(p.name)}</strong></div>
-          <div style="font-weight:900; color:#ffc64a;">${p.stars} ★</div>
-        </div>
-      `).join('');
+      const pageSize = pageSizeFor(sorted.length);
+      const pages = chunk(sorted, pageSize);
+      if (currentPage >= pages.length) currentPage = 0;
+      const page = pages[currentPage] || [];
+      document.getElementById('fullList').innerHTML = page.length
+        ? `<div class="list-grid">${page.map((p, i) => `
+            <div class="row">
+              <div class="badge">${(currentPage * pageSize) + i + 1}</div>
+              <div><strong>${escapeHtml(p.name)}</strong></div>
+              <div style="font-weight:900; color:#ffc64a;">${p.stars} ★</div>
+            </div>
+          `).join('')}</div>`
+        : '<div class="name">No employees yet</div>';
+
+      document.getElementById('pageStatus').textContent = pages.length > 1
+        ? `Showing ${currentPage + 1} of ${pages.length}`
+        : `${sorted.length} employees`;
+      startPaging(pages.length);
     }
 
     function escapeHtml(value) {
@@ -247,6 +304,7 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;');
     }
+    window.addEventListener('resize', render);
     window.addEventListener('storage', render);
     render();
   </script>
