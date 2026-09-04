@@ -67,8 +67,8 @@
       letter-spacing: -0.05em;
     }
     .logo {
-      max-width: min(46vw, 560px);
-      max-height: 150px;
+      max-width: min(62vw, 760px);
+      max-height: 220px;
       object-fit: contain;
       display: none;
       filter: drop-shadow(0 10px 20px rgba(0,0,0,.25));
@@ -169,22 +169,29 @@
       text-transform: uppercase;
     }
     @media (max-width: 1366px) {
-      .hero { grid-template-columns: 1fr .95fr; }
+      .logo { max-width: min(58vw, 680px); max-height: 190px; }
+      .hero { grid-template-columns: .82fr 1.08fr; }
       .rightcol { padding: 28px; }
       .list-grid { grid-template-columns: 1fr; gap: 16px; }
       .row {
-        grid-template-columns: 62px 1fr 96px;
-        padding: 18px 12px;
-        font-size: 30px;
+        grid-template-columns: 68px 1fr 110px;
+        padding: 20px 14px;
+        font-size: 34px;
         border-radius: 22px;
       }
-      .badge { width: 50px; height: 50px; font-size: 22px; }
-      .page-status { font-size: 16px; }
+      .badge { width: 54px; height: 54px; font-size: 24px; }
+      .page-status { font-size: 17px; }
     }
     @media (max-width: 1100px) {
-      .hero { grid-template-columns: 1fr; }
+      .logo { max-width: min(64vw, 620px); max-height: 175px; }
+      .hero { grid-template-columns: .72fr 1.15fr; }
       .list-grid { grid-template-columns: 1fr; }
-      .row { grid-template-columns: 58px 1fr 90px; font-size: 28px; padding: 16px 12px; }
+      .row { grid-template-columns: 64px 1fr 104px; font-size: 32px; padding: 18px 12px; }
+    }
+    @media (max-width: 820px) and (orientation: portrait) {
+      .logo { max-width: 86vw; max-height: 170px; }
+      .hero { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 62px 1fr 98px; font-size: 31px; padding: 18px 12px; }
     }
   </style>
 </head>
@@ -306,7 +313,7 @@
     }
 
     function pageSizeFor(count) {
-      if (window.innerWidth <= 1366) return 8;
+      if (window.innerWidth <= 1366) return 6;
       if (count <= 12) return 12;
       if (count <= 20) return 16;
       return 18;
