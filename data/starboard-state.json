@@ -23,6 +23,12 @@
       "name": "Esther V.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "92cc7e99-3542-4fa8-8ec1-5b0b40b0f692",
+      "name": "Iury G.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -32,5 +38,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:00:09.988Z"
+  "updatedAt": "2026-09-04T19:00:17.971Z"
 }
