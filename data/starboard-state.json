@@ -71,6 +71,12 @@
       "name": "Ken H.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "681b5083-9c71-4ca2-88d9-33f40a6d22e3",
+      "name": "Jared P.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -80,5 +86,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:01:16.274Z"
+  "updatedAt": "2026-09-04T19:01:23.120Z"
 }
