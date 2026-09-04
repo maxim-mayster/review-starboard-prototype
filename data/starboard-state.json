@@ -68,7 +68,7 @@
     },
     {
       "id": "681b5083-9c71-4ca2-88d9-33f40a6d22e3",
-      "name": "Jared P.",
+      "name": "Jared",
       "stars": 2,
       "reviewCount": 2
     },
@@ -161,5 +161,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T21:11:57.480Z"
+  "updatedAt": "2026-09-04T21:12:06.428Z"
 }
