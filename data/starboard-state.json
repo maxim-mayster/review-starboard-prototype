@@ -131,6 +131,12 @@
       "name": "Nickolas G.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "c037359a-14a6-4291-9096-a86c3dca74ad",
+      "name": "Jacqueline M.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -140,5 +146,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:05:10.342Z"
+  "updatedAt": "2026-09-04T19:05:24.329Z"
 }
