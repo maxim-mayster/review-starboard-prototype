@@ -156,6 +156,9 @@
       gap: 10px;
       font-size: 18px;
     }
+    .row.wrap-row {
+      opacity: .58;
+    }
     .badge {
       width: 44px; height: 44px; border-radius: 50%;
       display:flex; align-items:center; justify-content:center;
@@ -332,12 +335,22 @@
       const pages = chunk(sorted, pageSize);
       if (currentPage >= pages.length) currentPage = 0;
       const page = pages[currentPage] || [];
+      const displayRows = page.map((employee, index) => ({
+        employee,
+        rank: (currentPage * pageSize) + index + 1,
+        wrapped: false
+      }));
+      if (pages.length > 1 && page.length < pageSize) {
+        for (let i = 0; displayRows.length < pageSize && i < sorted.length; i++) {
+          displayRows.push({ employee: sorted[i], rank: i + 1, wrapped: true });
+        }
+      }
       document.getElementById('fullList').innerHTML = page.length
-        ? `<div class="list-grid">${page.map((p, i) => `
-            <div class="row">
-              <div class="badge">${(currentPage * pageSize) + i + 1}</div>
-              <div><strong>${escapeHtml(p.name)}</strong></div>
-              <div style="font-weight:900; color:#ffc64a;">${p.stars} ★</div>
+        ? `<div class="list-grid">${displayRows.map(({ employee, rank, wrapped }) => `
+            <div class="row ${wrapped ? 'wrap-row' : ''}">
+              <div class="badge">${rank}</div>
+              <div><strong>${escapeHtml(employee.name)}</strong></div>
+              <div style="font-weight:900; color:#ffc64a;">${employee.stars} ★</div>
             </div>
           `).join('')}</div>`
         : '<div class="name">No employees yet</div>';
