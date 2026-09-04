@@ -101,6 +101,12 @@
       "name": "David S.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "f049bdfa-e0f3-4219-a115-95a629bc0d2d",
+      "name": "Michael L.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -110,5 +116,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:02:35.315Z"
+  "updatedAt": "2026-09-04T19:02:54.975Z"
 }
