@@ -538,9 +538,24 @@
       return true;
     }
 
+    function hasSavedDeviceData() {
+      return !!(
+        localStorage.getItem(STORAGE_KEYS.employees) ||
+        localStorage.getItem(STORAGE_KEYS.reviews) ||
+        localStorage.getItem(STORAGE_KEYS.background) ||
+        localStorage.getItem(STORAGE_KEYS.logo)
+      );
+    }
+
     async function hydrateFromCloud() {
       try {
         const cloudState = await fetchCloudState();
+        if (hasSavedDeviceData()) {
+          state = loadLocalState();
+          rerender();
+          setSyncStatus('This device already has saved setup data. If this is the correct board, enter the PIN and click “Push this device to cloud” so every device matches it.');
+          return;
+        }
         state = cloudState;
         saveLocalState();
         rerender();
