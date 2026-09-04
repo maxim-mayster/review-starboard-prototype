@@ -2,13 +2,13 @@
   "employees": [
     {
       "id": "ad415ab8-3b79-44c0-83f5-b5cd25691df0",
-      "name": "David M.",
+      "name": "David",
       "stars": 0,
       "reviewCount": 0
     },
     {
       "id": "2226e8ea-8ab8-4b00-9c62-a4625633e2ad",
-      "name": "Daniil M.",
+      "name": "Daniil",
       "stars": 0,
       "reviewCount": 0
     },
@@ -161,5 +161,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T21:10:16.792Z"
+  "updatedAt": "2026-09-04T21:11:01.195Z"
 }
