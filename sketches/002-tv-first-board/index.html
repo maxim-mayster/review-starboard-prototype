@@ -293,7 +293,10 @@
     }
 
     function pageSizeFor(count) {
-      if (window.innerWidth <= 1366) return 6;
+      // Keep enough names on each rotation page so tablet/mobile screens do not
+      // leave a big empty gap at the bottom of the list panel.
+      if (window.innerWidth <= 1100) return 8;
+      if (window.innerWidth <= 1366) return 12;
       if (count <= 12) return 12;
       if (count <= 20) return 16;
       return 18;
