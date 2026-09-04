@@ -11,6 +11,12 @@
       "name": "Daniil M.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "f32f77f5-e82d-4946-9066-db0aaf464354",
+      "name": "Mikita S.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -20,5 +26,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T18:59:54.481Z"
+  "updatedAt": "2026-09-04T19:00:02.557Z"
 }
