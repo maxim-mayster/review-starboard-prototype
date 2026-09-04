@@ -16,7 +16,8 @@
       margin: 0;
       color: #f7fbff;
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
       position: relative;
       overflow: hidden;
       background: #050b14;
@@ -46,11 +47,12 @@
     .wrap {
       position: relative;
       z-index: 1;
-      padding: 30px;
-      min-height: 100vh;
+      padding: clamp(16px, 2.2vw, 30px);
+      height: 100vh;
+      height: 100dvh;
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 22px;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: clamp(12px, 1.6vw, 22px);
     }
     .topbar {
       display: flex;
@@ -86,6 +88,7 @@
       display: grid;
       grid-template-columns: 1.1fr .9fr;
       gap: 22px;
+      min-height: 0;
     }
     .panel {
       border-radius: 28px;
@@ -100,7 +103,7 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       align-items: end;
-      min-height: 360px;
+      min-height: 0;
     }
     .podium-card {
       border-radius: 24px;
@@ -109,9 +112,9 @@
       border: 1px solid rgba(255,255,255,.08);
       text-align: center;
     }
-    .podium-card.first { min-height: 300px; border-color: rgba(255,198,71,.55); }
-    .podium-card.second { min-height: 250px; }
-    .podium-card.third { min-height: 220px; }
+    .podium-card.first { min-height: min(300px, 42vh); border-color: rgba(255,198,71,.55); }
+    .podium-card.second { min-height: min(250px, 36vh); }
+    .podium-card.third { min-height: min(220px, 32vh); }
     .rank {
       width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 16px;
       display: flex; align-items: center; justify-content: center;
@@ -163,8 +166,8 @@
       gap: 10px;
       font-size: 18px;
     }
-    .row.wrap-row {
-      opacity: .58;
+    .row.placeholder-row {
+      visibility: hidden;
     }
     .badge {
       width: 44px; height: 44px; border-radius: 50%;
@@ -179,9 +182,28 @@
       text-transform: uppercase;
     }
     @media (max-width: 1100px) {
-      .hero { grid-template-columns: 1fr; }
+      .wrap { padding: 14px; gap: 12px; }
+      .topbar { gap: 10px; }
+      .brand { font-size: clamp(30px, 5vw, 54px); }
+      .logo { max-height: 92px; }
+      .month { padding: 12px 18px; font-size: clamp(18px, 3vw, 30px); }
+      .hero { grid-template-columns: .78fr 1fr; gap: 12px; }
+      .podium { padding: 16px; gap: 10px; }
+      .podium-card { padding: 14px; border-radius: 18px; }
+      .podium-card.first { min-height: 210px; }
+      .podium-card.second { min-height: 180px; }
+      .podium-card.third { min-height: 160px; }
+      .name { font-size: clamp(18px, 2.6vw, 28px); }
+      .score { font-size: clamp(24px, 3.5vw, 38px); }
+      .rightcol { padding: 14px; }
       .list-grid { grid-template-columns: 1fr; }
-      .row { grid-template-columns: 50px 1fr 80px; font-size: 16px; }
+      .row { grid-template-columns: 48px 1fr 72px; font-size: 16px; padding: 9px 6px; border-radius: 14px; }
+      .badge { width: 38px; height: 38px; }
+    }
+    @media (max-width: 820px) and (orientation: portrait) {
+      .hero { grid-template-columns: 1fr; }
+      .podium { min-height: 210px; }
+      .row { grid-template-columns: 46px 1fr 70px; font-size: 15px; padding: 8px 6px; }
     }
   </style>
 </head>
@@ -345,16 +367,16 @@
       const displayRows = page.map((employee, index) => ({
         employee,
         rank: (currentPage * pageSize) + index + 1,
-        wrapped: false
+        placeholder: false
       }));
       if (pages.length > 1 && page.length < pageSize) {
-        for (let i = 0; displayRows.length < pageSize && i < sorted.length; i++) {
-          displayRows.push({ employee: sorted[i], rank: i + 1, wrapped: true });
+        while (displayRows.length < pageSize) {
+          displayRows.push({ employee: { name: 'Placeholder', stars: 0 }, rank: '', placeholder: true });
         }
       }
       document.getElementById('fullList').innerHTML = page.length
-        ? `<div class="list-grid">${displayRows.map(({ employee, rank, wrapped }) => `
-            <div class="row ${wrapped ? 'wrap-row' : ''}">
+        ? `<div class="list-grid">${displayRows.map(({ employee, rank, placeholder }) => `
+            <div class="row ${placeholder ? 'placeholder-row' : ''}">
               <div class="badge">${rank}</div>
               <div><strong>${escapeHtml(employee.name)}</strong></div>
               <div style="font-weight:900; color:#ffc64a;">${employee.stars} ★</div>
