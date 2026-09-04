@@ -83,6 +83,12 @@
       "name": "Domanic G.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "d48a56b3-1620-4a98-9604-b5f3a0d9f1c7",
+      "name": "Dima R.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -92,5 +98,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:02:00.388Z"
+  "updatedAt": "2026-09-04T19:02:07.230Z"
 }
