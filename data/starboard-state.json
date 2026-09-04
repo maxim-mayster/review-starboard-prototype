@@ -29,6 +29,12 @@
       "name": "Iury G.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "e852e819-4141-4dfb-9657-5ad3397553b2",
+      "name": "Tailor H.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -38,5 +44,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:00:17.971Z"
+  "updatedAt": "2026-09-04T19:00:24.467Z"
 }
