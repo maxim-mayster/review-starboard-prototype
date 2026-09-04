@@ -35,6 +35,12 @@
       "name": "Tailor H.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "87afd410-133c-487c-a20e-7bd6f5fde6ee",
+      "name": "Max F.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -44,5 +50,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:00:24.467Z"
+  "updatedAt": "2026-09-04T19:00:30.212Z"
 }
