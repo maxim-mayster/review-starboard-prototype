@@ -41,6 +41,12 @@
       "name": "Max F.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "25c19d7b-d45f-4999-8d95-382a727261dd",
+      "name": "Brandon J.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -50,5 +56,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:00:30.212Z"
+  "updatedAt": "2026-09-04T19:00:51.030Z"
 }
