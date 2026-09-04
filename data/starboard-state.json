@@ -77,6 +77,12 @@
       "name": "Jared P.",
       "stars": 0,
       "reviewCount": 0
+    },
+    {
+      "id": "82b09b91-7bbb-430b-8bae-87148d21b371",
+      "name": "Domanic G.",
+      "stars": 0,
+      "reviewCount": 0
     }
   ],
   "reviews": [],
@@ -86,5 +92,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T19:01:23.120Z"
+  "updatedAt": "2026-09-04T19:02:00.388Z"
 }
