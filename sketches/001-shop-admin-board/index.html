@@ -269,6 +269,18 @@
       <div>
         <div class="brand">Review Starboard</div>
         <div class="muted">Simple admin controls for monthly employee review stars.</div>
+        <div class="panel review-form" style="margin-top:18px; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.14);">
+          <h3 style="margin:0 0 10px;">Cloud sync</h3>
+          <div class="field">
+            <label for="adminPin" style="color:rgba(255,255,255,.82);">Admin PIN</label>
+            <input id="adminPin" type="password" inputmode="numeric" placeholder="Enter PIN to save changes" />
+          </div>
+          <div class="employee-actions">
+            <button class="ghost" id="savePin">Unlock saves</button>
+            <button class="ghost" id="pushLocalData">Push this device to cloud</button>
+          </div>
+          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading shared cloud data…</div>
+        </div>
       </div>
 
       <div class="stats">
@@ -351,7 +363,7 @@
             <button class="ghost" id="clearBg">Clear background</button>
             <button class="ghost" id="clearLogo">Clear logo</button>
           </div>
-          <div class="preview-note">These uploads and blur settings are saved in the browser so the TV board keeps them after reload.</div>
+          <div class="preview-note">These uploads and blur settings now save to the shared cloud board so every TV/device gets the same setup.</div>
         </div>
       </div>
     </aside>
@@ -421,15 +433,18 @@
       background: 'review-starboard-tv-bg',
       logo: 'review-starboard-tv-logo',
       blur: 'review-starboard-tv-blur',
-      overlay: 'review-starboard-tv-overlay'
+      overlay: 'review-starboard-tv-overlay',
+      adminPin: 'review-starboard-admin-pin'
     };
 
+    const API_URL = '/api/state';
+
     const defaultEmployees = [
-      { id: crypto.randomUUID(), name: 'Brandon R.', stars: 7, reviewCount: 6 },
-      { id: crypto.randomUUID(), name: 'Marcus J.', stars: 5, reviewCount: 5 },
-      { id: crypto.randomUUID(), name: 'Alyssa M.', stars: 4, reviewCount: 4 },
-      { id: crypto.randomUUID(), name: 'Monica V.', stars: 4, reviewCount: 4 },
-      { id: crypto.randomUUID(), name: 'Chris T.', stars: 3, reviewCount: 3 }
+      { id: 'brandon-r', name: 'Brandon R.', stars: 7, reviewCount: 6 },
+      { id: 'marcus-j', name: 'Marcus J.', stars: 5, reviewCount: 5 },
+      { id: 'alyssa-m', name: 'Alyssa M.', stars: 4, reviewCount: 4 },
+      { id: 'monica-v', name: 'Monica V.', stars: 4, reviewCount: 4 },
+      { id: 'chris-t', name: 'Chris T.', stars: 3, reviewCount: 3 }
     ];
 
     const defaultReviews = [
@@ -440,22 +455,108 @@
       { employeeId: defaultEmployees[0].id, platform: 'Google' }
     ];
 
+    const defaultSettings = { background: '', logo: '', blur: 8, overlay: 35 };
     const $ = (id) => document.getElementById(id);
-    let state = loadState();
+    let state = loadLocalState();
+    let syncTimer = null;
 
-    function loadState() {
-      const employees = (JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || structuredClone(defaultEmployees))
-        .map(employee => ({
-          ...employee,
-          reviewCount: Number.isFinite(employee.reviewCount) ? employee.reviewCount : employee.stars
-        }));
-      const reviews = JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || 'null') || structuredClone(defaultReviews);
-      return { employees, reviews };
+    function readSettingsFromLocalStorage() {
+      return {
+        background: localStorage.getItem(STORAGE_KEYS.background) || '',
+        logo: localStorage.getItem(STORAGE_KEYS.logo) || '',
+        blur: Number(localStorage.getItem(STORAGE_KEYS.blur) || 8),
+        overlay: Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35)
+      };
     }
 
-    function saveState() {
+    function writeSettingsToLocalStorage(settings = {}) {
+      localStorage.setItem(STORAGE_KEYS.background, settings.background || '');
+      localStorage.setItem(STORAGE_KEYS.logo, settings.logo || '');
+      localStorage.setItem(STORAGE_KEYS.blur, String(settings.blur ?? 8));
+      localStorage.setItem(STORAGE_KEYS.overlay, String(settings.overlay ?? 35));
+    }
+
+    function normalizeState(nextState) {
+      const employees = (Array.isArray(nextState?.employees) ? nextState.employees : structuredClone(defaultEmployees))
+        .map(employee => ({
+          ...employee,
+          id: employee.id || crypto.randomUUID(),
+          reviewCount: Number.isFinite(Number(employee.reviewCount)) ? Number(employee.reviewCount) : Number(employee.stars || 0),
+          stars: Number.isFinite(Number(employee.stars)) ? Number(employee.stars) : 0
+        }));
+      const reviews = Array.isArray(nextState?.reviews) ? nextState.reviews : structuredClone(defaultReviews);
+      const settings = { ...defaultSettings, ...(nextState?.settings || {}) };
+      return { employees, reviews, settings, updatedAt: nextState?.updatedAt };
+    }
+
+    function loadLocalState() {
+      return normalizeState({
+        employees: JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null'),
+        reviews: JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || 'null'),
+        settings: readSettingsFromLocalStorage()
+      });
+    }
+
+    function saveLocalState() {
       localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(state.employees));
       localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(state.reviews));
+      writeSettingsToLocalStorage(state.settings);
+    }
+
+    function setSyncStatus(message) {
+      $('syncStatus').textContent = message;
+    }
+
+    function adminPin() {
+      return sessionStorage.getItem(STORAGE_KEYS.adminPin) || localStorage.getItem(STORAGE_KEYS.adminPin) || '';
+    }
+
+    async function fetchCloudState() {
+      const response = await fetch(`${API_URL}?t=${Date.now()}`, { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not load cloud data.');
+      return normalizeState(payload.state);
+    }
+
+    async function saveCloudState(showSaved = true) {
+      const pin = adminPin();
+      if (!pin) {
+        setSyncStatus('Enter the admin PIN, then click Unlock saves. Your changes are still saved on this device until unlocked.');
+        return false;
+      }
+      saveLocalState();
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': pin },
+        body: JSON.stringify({ state })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not save cloud data.');
+      state = normalizeState(payload.state);
+      saveLocalState();
+      if (showSaved) setSyncStatus(`Saved to cloud at ${new Date().toLocaleTimeString()}. Other devices will update automatically.`);
+      return true;
+    }
+
+    async function hydrateFromCloud() {
+      try {
+        const cloudState = await fetchCloudState();
+        state = cloudState;
+        saveLocalState();
+        rerender();
+        setSyncStatus(`Cloud data loaded at ${new Date().toLocaleTimeString()}.`);
+      } catch (error) {
+        setSyncStatus(`Using this device's saved copy. Cloud sync issue: ${error.message}`);
+      }
+    }
+
+    function queueCloudSave() {
+      saveLocalState();
+      if (syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(async () => {
+        try { await saveCloudState(); }
+        catch (error) { setSyncStatus(`Not saved to cloud: ${error.message}`); }
+      }, 250);
     }
 
     function sortedEmployees() {
@@ -520,16 +621,16 @@
       $('yelpCount').textContent = state.reviews.filter(r => r.platform === 'Yelp').length;
       $('reviewCount').textContent = state.reviews.length;
       $('employeeCount').textContent = state.employees.length;
-      const hasBg = !!localStorage.getItem(STORAGE_KEYS.background);
-      const hasLogo = !!localStorage.getItem(STORAGE_KEYS.logo);
+      const hasBg = !!state.settings.background;
+      const hasLogo = !!state.settings.logo;
       $('tvAssetStatus').textContent = `${hasBg ? 'BG' : 'No BG'} / ${hasLogo ? 'Logo' : 'Text'}`;
       renderTvSettings();
       renderLogoPreview();
     }
 
     function renderTvSettings() {
-      const blur = Number(localStorage.getItem(STORAGE_KEYS.blur) || 8);
-      const overlay = Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35);
+      const blur = Number(state.settings.blur ?? 8);
+      const overlay = Number(state.settings.overlay ?? 35);
       $('blurAmount').value = String(blur);
       $('overlayAmount').value = String(overlay);
       $('blurAmountValue').textContent = `${blur}px`;
@@ -541,7 +642,7 @@
       if (!name) return;
       state.employees.push({ id: crypto.randomUUID(), name, stars: 0, reviewCount: 0 });
       $('newEmployeeName').value = '';
-      saveState();
+      queueCloudSave();
       rerender();
     }
 
@@ -553,19 +654,19 @@
       const employee = state.employees.find(e => e.id === id);
       if (!employee) return;
       employee.name = name;
-      saveState();
+      queueCloudSave();
       rerender();
     }
 
     function removeEmployee(id) {
       state.employees = state.employees.filter(e => e.id !== id);
       state.reviews = state.reviews.filter(r => r.employeeId !== id);
-      saveState();
+      queueCloudSave();
       rerender();
     }
 
     function renderLogoPreview() {
-      const logo = localStorage.getItem(STORAGE_KEYS.logo);
+      const logo = state.settings.logo;
       const img = $('tvLogoPreview');
       if (logo) {
         img.src = logo;
@@ -576,12 +677,16 @@
       }
     }
 
-    function handleAssetUpload(inputId, storageKey) {
+    function handleAssetUpload(inputId, settingKey) {
       const file = $(inputId).files?.[0];
       if (!file) return;
+      if (file.size > 1_800_000) {
+        setSyncStatus('That image is pretty large. Use a smaller image so it can sync to every device faster.');
+      }
       const reader = new FileReader();
       reader.onload = () => {
-        localStorage.setItem(storageKey, reader.result);
+        state.settings[settingKey] = reader.result;
+        queueCloudSave();
         renderBoard();
       };
       reader.readAsDataURL(file);
@@ -594,7 +699,7 @@
     }
 
     function escapeHtml(value) {
-      return value
+      return String(value)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
@@ -613,47 +718,67 @@
       const starsToAdd = employee.reviewCount >= 5 ? 2 : 1;
       employee.reviewCount += 1;
       employee.stars += starsToAdd;
-      state.reviews.unshift({ employeeId: employee.id, platform });
-      saveState();
+      state.reviews.unshift({ employeeId: employee.id, platform, date: new Date().toISOString() });
+      queueCloudSave();
       rerender();
     });
 
     $('resetDemo').addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEYS.employees);
-      localStorage.removeItem(STORAGE_KEYS.reviews);
-      state = { employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews) };
-      saveState();
+      state = normalizeState({ employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews), settings: defaultSettings });
+      queueCloudSave();
       rerender();
+    });
+
+    $('savePin').addEventListener('click', async () => {
+      const pin = $('adminPin').value.trim();
+      if (!pin) return setSyncStatus('Enter the admin PIN first.');
+      sessionStorage.setItem(STORAGE_KEYS.adminPin, pin);
+      localStorage.setItem(STORAGE_KEYS.adminPin, pin);
+      try { await saveCloudState(); }
+      catch (error) { setSyncStatus(`PIN did not work: ${error.message}`); }
+    });
+
+    $('pushLocalData').addEventListener('click', async () => {
+      state = loadLocalState();
+      rerender();
+      try { await saveCloudState(); }
+      catch (error) { setSyncStatus(`Could not push this device: ${error.message}`); }
     });
 
     $('addEmployee').addEventListener('click', addEmployee);
     $('newEmployeeName').addEventListener('keydown', (event) => {
       if (event.key === 'Enter') addEmployee();
     });
-    $('bgUpload').addEventListener('change', () => handleAssetUpload('bgUpload', STORAGE_KEYS.background));
-    $('logoUpload').addEventListener('change', () => handleAssetUpload('logoUpload', STORAGE_KEYS.logo));
+    $('bgUpload').addEventListener('change', () => handleAssetUpload('bgUpload', 'background'));
+    $('logoUpload').addEventListener('change', () => handleAssetUpload('logoUpload', 'logo'));
     $('blurAmount').addEventListener('input', () => {
-      const value = $('blurAmount').value;
-      localStorage.setItem(STORAGE_KEYS.blur, value);
+      const value = Number($('blurAmount').value);
+      state.settings.blur = value;
       $('blurAmountValue').textContent = `${value}px`;
+      queueCloudSave();
     });
     $('overlayAmount').addEventListener('input', () => {
-      const value = $('overlayAmount').value;
-      localStorage.setItem(STORAGE_KEYS.overlay, value);
+      const value = Number($('overlayAmount').value);
+      state.settings.overlay = value;
       $('overlayAmountValue').textContent = `${value}%`;
+      queueCloudSave();
     });
     $('clearBg').addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEYS.background);
+      state.settings.background = '';
       $('bgUpload').value = '';
+      queueCloudSave();
       renderBoard();
     });
     $('clearLogo').addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEYS.logo);
+      state.settings.logo = '';
       $('logoUpload').value = '';
+      queueCloudSave();
       renderBoard();
     });
 
+    $('adminPin').value = adminPin();
     rerender();
+    hydrateFromCloud();
   </script>
 </body>
 </html>

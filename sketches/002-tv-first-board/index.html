@@ -198,25 +198,63 @@
       overlay: 'review-starboard-tv-overlay'
     };
 
+    const API_URL = '/api/state';
     const fallbackEmployees = [
-      { id: 'fallback-1', name: 'Brandon R.', stars: 7, reviewCount: 6 },
-      { id: 'fallback-2', name: 'Marcus J.', stars: 5, reviewCount: 5 },
-      { id: 'fallback-3', name: 'Alyssa M.', stars: 4, reviewCount: 4 }
+      { id: 'brandon-r', name: 'Brandon R.', stars: 7, reviewCount: 6 },
+      { id: 'marcus-j', name: 'Marcus J.', stars: 5, reviewCount: 5 },
+      { id: 'alyssa-m', name: 'Alyssa M.', stars: 4, reviewCount: 4 }
     ];
 
     let employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || structuredClone(fallbackEmployees);
+    let settings = {
+      background: localStorage.getItem(STORAGE_KEYS.background) || '',
+      logo: localStorage.getItem(STORAGE_KEYS.logo) || '',
+      blur: Number(localStorage.getItem(STORAGE_KEYS.blur) || 8),
+      overlay: Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35)
+    };
     let currentPage = 0;
     let pageTimer = null;
 
-    function save() {
+    function saveLocalCopy() {
       localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
+      localStorage.setItem(STORAGE_KEYS.background, settings.background || '');
+      localStorage.setItem(STORAGE_KEYS.logo, settings.logo || '');
+      localStorage.setItem(STORAGE_KEYS.blur, String(settings.blur ?? 8));
+      localStorage.setItem(STORAGE_KEYS.overlay, String(settings.overlay ?? 35));
+    }
+
+    function normalizeState(nextState = {}) {
+      employees = (Array.isArray(nextState.employees) ? nextState.employees : fallbackEmployees).map(employee => ({
+        ...employee,
+        stars: Number.isFinite(Number(employee.stars)) ? Number(employee.stars) : 0,
+        reviewCount: Number.isFinite(Number(employee.reviewCount)) ? Number(employee.reviewCount) : Number(employee.stars || 0)
+      }));
+      settings = {
+        background: nextState.settings?.background || '',
+        logo: nextState.settings?.logo || '',
+        blur: Number(nextState.settings?.blur ?? 8),
+        overlay: Number(nextState.settings?.overlay ?? 35)
+      };
+      saveLocalCopy();
+    }
+
+    async function loadCloudState() {
+      try {
+        const response = await fetch(`${API_URL}?t=${Date.now()}`, { cache: 'no-store' });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not load shared board.');
+        normalizeState(payload.state);
+        render();
+      } catch (error) {
+        document.getElementById('pageStatus').textContent = 'Offline copy';
+      }
     }
 
     function applyBranding() {
-      const savedBg = localStorage.getItem(STORAGE_KEYS.background);
-      const savedLogo = localStorage.getItem(STORAGE_KEYS.logo);
-      const savedBlur = Number(localStorage.getItem(STORAGE_KEYS.blur) || 8);
-      const savedOverlay = Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35) / 100;
+      const savedBg = settings.background;
+      const savedLogo = settings.logo;
+      const savedBlur = Number(settings.blur ?? 8);
+      const savedOverlay = Number(settings.overlay ?? 35) / 100;
       if (savedBg) {
         document.documentElement.style.setProperty('--uploaded-bg', `url(${savedBg})`);
       } else {
@@ -265,7 +303,6 @@
     }
 
     function render() {
-      employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null') || employees;
       applyBranding();
       const sorted = list();
       const podium = sorted.slice(0, 3);
@@ -298,15 +335,18 @@
     }
 
     function escapeHtml(value) {
-      return value
+      return String(value)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;');
     }
+
     window.addEventListener('resize', render);
     window.addEventListener('storage', render);
     render();
+    loadCloudState();
+    setInterval(loadCloudState, 5000);
   </script>
 </body>
 </html>
