@@ -14,7 +14,7 @@
     },
     {
       "id": "f32f77f5-e82d-4946-9066-db0aaf464354",
-      "name": "Mikita S.",
+      "name": "Mikita",
       "stars": 2,
       "reviewCount": 2
     },
@@ -161,5 +161,5 @@
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T21:13:21.125Z"
+  "updatedAt": "2026-09-04T21:13:48.559Z"
 }
