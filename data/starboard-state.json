@@ -1,29 +1,18 @@
 {
   "employees": [
     {
-      "id": "monica-v",
-      "name": "Monica V.",
-      "stars": 4,
-      "reviewCount": 4
-    },
-    {
       "id": "chris-t",
       "name": "Chris T.",
       "stars": 3,
       "reviewCount": 3
     }
   ],
-  "reviews": [
-    {
-      "employeeId": "monica-v",
-      "platform": "Yelp"
-    }
-  ],
+  "reviews": [],
   "settings": {
     "background": "",
     "logo": "",
     "blur": 8,
     "overlay": 35
   },
-  "updatedAt": "2026-09-04T18:59:28.041Z"
+  "updatedAt": "2026-09-04T18:59:28.983Z"
 }
