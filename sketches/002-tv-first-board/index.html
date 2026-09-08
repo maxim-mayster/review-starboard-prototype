@@ -411,8 +411,10 @@
       const pages = chunk(sorted, pageSize);
       if (currentPage >= pages.length) currentPage = 0;
       const page = pages[currentPage] || [];
+      const columns = window.innerWidth <= 1100 ? 1 : 2;
+      const gridRows = Math.max(1, Math.ceil(page.length / columns));
       document.getElementById('fullList').innerHTML = page.length
-        ? `<div class="list-grid">${page.map((employee, index) => `
+        ? `<div class="list-grid" style="grid-template-rows: repeat(${gridRows}, minmax(0, 1fr));">${page.map((employee, index) => `
             <div class="row">
               <div class="badge">${(currentPage * pageSize) + index + 1}</div>
               <div><strong>${escapeHtml(employee.name)}</strong></div>
