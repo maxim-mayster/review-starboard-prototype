@@ -3,6 +3,16 @@ const DATA_PATH = process.env.GITHUB_DATA_PATH || 'data/starboard-state.json';
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
 const TOKEN = process.env.GITHUB_TOKEN;
 const ADMIN_PIN = process.env.ADMIN_PIN;
+const ASSET_PATHS = {
+  background: 'assets/tv-background',
+  logo: 'assets/tv-logo'
+};
+const MIME_EXTENSIONS = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/webp': 'webp'
+};
 
 const DEFAULT_STATE = {
   employees: [
@@ -120,6 +130,46 @@ async function writeStateToGitHub(state) {
   return state;
 }
 
+function decodeDataUrl(value) {
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^data:(image\/(?:png|jpe?g|webp));base64,(.+)$/s);
+  if (!match) return null;
+  return {
+    mime: match[1],
+    ext: MIME_EXTENSIONS[match[1]] || 'png',
+    content: match[2]
+  };
+}
+
+async function writeAssetToGitHub(path, content, message) {
+  let sha = null;
+  try {
+    const current = await githubRequest(`/repos/${OWNER_REPO}/contents/${path}?ref=${BRANCH}`);
+    sha = current.sha;
+  } catch (error) {
+    if (error.status !== 404) throw error;
+  }
+  const body = { message, content, branch: BRANCH };
+  if (sha) body.sha = sha;
+  await githubRequest(`/repos/${OWNER_REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+}
+
+async function externalizeUploadedAssets(state) {
+  const next = { ...state, settings: { ...state.settings } };
+  for (const key of ['background', 'logo']) {
+    const decoded = decodeDataUrl(next.settings[key]);
+    if (!decoded) continue;
+    const assetPath = `${ASSET_PATHS[key]}.${decoded.ext}`;
+    await writeAssetToGitHub(assetPath, decoded.content, `Update TV ${key} image`);
+    next.settings[key] = `../../${assetPath}?v=${encodeURIComponent(next.updatedAt || Date.now())}`;
+  }
+  return next;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return send(res, 204, {});
 
@@ -136,7 +186,7 @@ module.exports = async function handler(req, res) {
       const raw = await readBody(req);
       if (raw.length > 4_500_000) return send(res, 413, { ok: false, error: 'Upload is too large. Use a smaller background/logo image.' });
       const payload = JSON.parse(raw || '{}');
-      const state = normalizeState(payload.state || payload);
+      const state = await externalizeUploadedAssets(normalizeState(payload.state || payload));
       await writeStateToGitHub(state);
       return send(res, 200, { ok: true, state });
     }
