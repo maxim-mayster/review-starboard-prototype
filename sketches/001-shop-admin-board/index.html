@@ -273,16 +273,11 @@
         <div class="brand">Review Starboard</div>
         <div class="muted">Simple admin controls for monthly employee review stars.</div>
         <div class="panel review-form" style="margin-top:18px; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.14);">
-          <h3 style="margin:0 0 10px;">Cloud sync</h3>
-          <div class="field">
-            <label for="adminPin" style="color:rgba(255,255,255,.82);">Backup PIN</label>
-            <input id="adminPin" type="password" inputmode="numeric" placeholder="Only needed if Firebase is offline" />
-          </div>
+          <h3 style="margin:0 0 10px;">Firebase auto-save</h3>
           <div class="employee-actions">
-            <button class="ghost" id="savePin">Sign in / turn on auto-save</button>
-            <button class="ghost" id="pushLocalData">One-time copy this device to cloud</button>
+            <button class="ghost" id="savePin">Sign in once</button>
           </div>
-          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading shared cloud data… After Google sign-in is connected once, changes auto-save in the background.</div>
+          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading Firebase data… After Google sign-in is connected once, every change auto-saves in the background.</div>
         </div>
       </div>
 
@@ -436,8 +431,7 @@
       background: 'review-starboard-tv-bg',
       logo: 'review-starboard-tv-logo',
       blur: 'review-starboard-tv-blur',
-      overlay: 'review-starboard-tv-overlay',
-      adminPin: 'review-starboard-admin-pin'
+      overlay: 'review-starboard-tv-overlay'
     };
 
     const API_URL = '/api/state';
@@ -520,10 +514,6 @@
       $('syncStatus').textContent = message;
     }
 
-    function adminPin() {
-      return sessionStorage.getItem(STORAGE_KEYS.adminPin) || localStorage.getItem(STORAGE_KEYS.adminPin) || '';
-    }
-
     function firebaseReady() {
       return window.firebase && FIREBASE_CONFIG?.apiKey && !FIREBASE_CONFIG.apiKey.includes('...');
     }
@@ -587,25 +577,11 @@
       saveLocalState();
       try {
         state = normalizeState(await saveFirebaseState());
-        if (showSaved) setSyncStatus(`Saved to Firebase at ${new Date().toLocaleTimeString()}. Other devices will update on their next refresh.`);
+        if (showSaved) setSyncStatus(`Auto-saved to Firebase at ${new Date().toLocaleTimeString()}. Other devices will update on their next refresh.`);
         return true;
       } catch (firebaseError) {
-        const pin = adminPin();
-        if (!pin) {
-          setSyncStatus('Sign in with Google to turn on Firebase auto-save. Your changes are still saved on this device until connected.');
-          return false;
-        }
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': pin },
-          body: JSON.stringify({ state })
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) throw new Error(firebaseError.message || payload.error || 'Could not save cloud data.');
-        state = normalizeState(payload.state);
-        saveLocalState();
-        if (showSaved) setSyncStatus(`Saved to backup API at ${new Date().toLocaleTimeString()}. Other devices will update automatically.`);
-        return true;
+        setSyncStatus(`Not auto-saved yet: ${firebaseError.message}. Sign in with Google once, then changes save automatically.`);
+        return false;
       }
     }
 
@@ -621,16 +597,10 @@
     async function hydrateFromCloud() {
       try {
         const cloudState = await fetchCloudState();
-        if (hasSavedDeviceData()) {
-          state = loadLocalState();
-          rerender();
-          setSyncStatus('This device already has saved setup data. If this is the correct board, enter the PIN and click “One-time copy this device to cloud” once. After that, new changes auto-save.');
-          return;
-        }
         state = cloudState;
         saveLocalState();
         rerender();
-        setSyncStatus(`Cloud data loaded at ${new Date().toLocaleTimeString()}.`);
+        setSyncStatus(`Firebase data loaded at ${new Date().toLocaleTimeString()}. Changes auto-save after Google sign-in.`);
       } catch (error) {
         setSyncStatus(`Using this device's saved copy. Cloud sync issue: ${error.message}`);
       }
@@ -816,20 +786,8 @@
     });
 
     $('savePin').addEventListener('click', async () => {
-      const pin = $('adminPin').value.trim();
-      if (pin) {
-        sessionStorage.setItem(STORAGE_KEYS.adminPin, pin);
-        localStorage.setItem(STORAGE_KEYS.adminPin, pin);
-      }
       try { await saveCloudState(); }
       catch (error) { setSyncStatus(`Auto-save did not connect: ${error.message}`); }
-    });
-
-    $('pushLocalData').addEventListener('click', async () => {
-      state = loadLocalState();
-      rerender();
-      try { await saveCloudState(); }
-      catch (error) { setSyncStatus(`Could not push this device: ${error.message}`); }
     });
 
     $('addEmployee').addEventListener('click', addEmployee);
@@ -863,7 +821,6 @@
       renderBoard();
     });
 
-    $('adminPin').value = adminPin();
     rerender();
     hydrateFromCloud();
   </script>
