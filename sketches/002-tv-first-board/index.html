@@ -283,7 +283,17 @@
         normalizeState(payload.state);
         render();
       } catch (error) {
-        document.getElementById('pageStatus').textContent = 'Offline copy';
+        try {
+          // Emergency static-host fallback for GitHub Pages when Vercel is blocked.
+          const fallbackResponse = await fetch(`../../data/starboard-state.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (!fallbackResponse.ok) throw new Error('Static state unavailable.');
+          const fallbackState = await fallbackResponse.json();
+          normalizeState(fallbackState.state || fallbackState);
+          render();
+          document.getElementById('pageStatus').textContent = document.getElementById('pageStatus').textContent.replace('SHOWING', 'BACKUP SHOWING');
+        } catch (fallbackError) {
+          document.getElementById('pageStatus').textContent = 'Offline copy';
+        }
       }
     }
 
