@@ -205,6 +205,9 @@
       .row { grid-template-columns: 48px 1fr 74px; font-size: 18px; padding: 7px 6px; }
     }
   </style>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -237,6 +240,16 @@
     };
 
     const API_URL = '/api/state';
+    const FIREBASE_CONFIG = {
+      "apiKey": "AIzaSyDq_ZPfKkAZfhCGgFGmaKYWA_8zecQsZJs",
+      "authDomain": "reviews-f778a.firebaseapp.com",
+      "projectId": "reviews-f778a",
+      "storageBucket": "reviews-f778a.firebasestorage.app",
+      "messagingSenderId": "502143943954",
+      "appId": "1:502143943954:web:67c018402e846054ec1fcb",
+      "measurementId": "G-691XGDL8EW"
+};
+    const FIREBASE_DOC_PATH = 'starboards/main';
     const fallbackEmployees = [
       { id: 'brandon-r', name: 'Brandon R.', stars: 7, reviewCount: 6 },
       { id: 'marcus-j', name: 'Marcus J.', stars: 5, reviewCount: 5 },
@@ -260,6 +273,24 @@
       localStorage.setItem(STORAGE_KEYS.overlay, String(settings.overlay ?? 35));
     }
 
+    function firebaseReady() {
+      return window.firebase && FIREBASE_CONFIG?.apiKey && !FIREBASE_CONFIG.apiKey.includes('...');
+    }
+
+    function firebaseApp() {
+      if (!firebaseReady()) return null;
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      return firebase.app();
+    }
+
+    async function fetchFirebaseState() {
+      const app = firebaseApp();
+      if (!app) throw new Error('Firebase is not configured yet.');
+      const snap = await firebase.firestore().doc(FIREBASE_DOC_PATH).get();
+      if (!snap.exists) throw new Error('Firebase board is empty.');
+      return snap.data();
+    }
+
     function normalizeState(nextState = {}) {
       employees = (Array.isArray(nextState.employees) ? nextState.employees : fallbackEmployees).map(employee => ({
         ...employee,
@@ -277,22 +308,28 @@
 
     async function loadCloudState() {
       try {
-        const response = await fetch(`${API_URL}?t=${Date.now()}`, { cache: 'no-store' });
-        const payload = await response.json();
-        if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not load shared board.');
-        normalizeState(payload.state);
+        const firebaseState = await fetchFirebaseState();
+        normalizeState(firebaseState);
         render();
-      } catch (error) {
+      } catch (firebaseError) {
         try {
-          // Emergency static-host fallback for GitHub Pages when Vercel is blocked.
-          const fallbackResponse = await fetch(`../../data/starboard-state.json?t=${Date.now()}`, { cache: 'no-store' });
-          if (!fallbackResponse.ok) throw new Error('Static state unavailable.');
-          const fallbackState = await fallbackResponse.json();
-          normalizeState(fallbackState.state || fallbackState);
+          const response = await fetch(`${API_URL}?t=${Date.now()}`, { cache: 'no-store' });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not load shared board.');
+          normalizeState(payload.state);
           render();
-          document.getElementById('pageStatus').textContent = document.getElementById('pageStatus').textContent.replace('SHOWING', 'BACKUP SHOWING');
-        } catch (fallbackError) {
-          document.getElementById('pageStatus').textContent = 'Offline copy';
+        } catch (apiError) {
+          try {
+            // Emergency static-host fallback for GitHub Pages when Vercel/Firebase is unavailable.
+            const fallbackResponse = await fetch(`../../data/starboard-state.json?t=${Date.now()}`, { cache: 'no-store' });
+            if (!fallbackResponse.ok) throw new Error('Static state unavailable.');
+            const fallbackState = await fallbackResponse.json();
+            normalizeState(fallbackState.state || fallbackState);
+            render();
+            document.getElementById('pageStatus').textContent = document.getElementById('pageStatus').textContent.replace('SHOWING', 'BACKUP SHOWING');
+          } catch (fallbackError) {
+            document.getElementById('pageStatus').textContent = 'Offline copy';
+          }
         }
       }
     }

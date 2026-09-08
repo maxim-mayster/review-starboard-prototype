@@ -262,6 +262,9 @@
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="app">
@@ -272,14 +275,14 @@
         <div class="panel review-form" style="margin-top:18px; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.14);">
           <h3 style="margin:0 0 10px;">Cloud sync</h3>
           <div class="field">
-            <label for="adminPin" style="color:rgba(255,255,255,.82);">Admin PIN</label>
-            <input id="adminPin" type="password" inputmode="numeric" placeholder="Enter PIN to save changes" />
+            <label for="adminPin" style="color:rgba(255,255,255,.82);">Backup PIN</label>
+            <input id="adminPin" type="password" inputmode="numeric" placeholder="Only needed if Firebase is offline" />
           </div>
           <div class="employee-actions">
-            <button class="ghost" id="savePin">Turn on auto-save</button>
+            <button class="ghost" id="savePin">Sign in / turn on auto-save</button>
             <button class="ghost" id="pushLocalData">One-time copy this device to cloud</button>
           </div>
-          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading shared cloud data… After the PIN is unlocked once, changes auto-save in the background.</div>
+          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading shared cloud data… After Google sign-in is connected once, changes auto-save in the background.</div>
         </div>
       </div>
 
@@ -438,6 +441,16 @@
     };
 
     const API_URL = '/api/state';
+    const FIREBASE_CONFIG = {
+      "apiKey": "AIzaSyDq_ZPfKkAZfhCGgFGmaKYWA_8zecQsZJs",
+      "authDomain": "reviews-f778a.firebaseapp.com",
+      "projectId": "reviews-f778a",
+      "storageBucket": "reviews-f778a.firebasestorage.app",
+      "messagingSenderId": "502143943954",
+      "appId": "1:502143943954:web:67c018402e846054ec1fcb",
+      "measurementId": "G-691XGDL8EW"
+};
+    const FIREBASE_DOC_PATH = 'starboards/main';
 
     const defaultEmployees = [
       { id: 'brandon-r', name: 'Brandon R.', stars: 7, reviewCount: 6 },
@@ -511,31 +524,89 @@
       return sessionStorage.getItem(STORAGE_KEYS.adminPin) || localStorage.getItem(STORAGE_KEYS.adminPin) || '';
     }
 
+    function firebaseReady() {
+      return window.firebase && FIREBASE_CONFIG?.apiKey && !FIREBASE_CONFIG.apiKey.includes('...');
+    }
+
+    function firebaseApp() {
+      if (!firebaseReady()) return null;
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      return firebase.app();
+    }
+
+    function firebaseDb() {
+      const app = firebaseApp();
+      return app ? firebase.firestore() : null;
+    }
+
+    function firebaseAuth() {
+      const app = firebaseApp();
+      return app ? firebase.auth() : null;
+    }
+
+    async function signInAdminIfNeeded() {
+      const auth = firebaseAuth();
+      if (!auth) return null;
+      if (auth.currentUser) return auth.currentUser;
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const result = await auth.signInWithPopup(provider);
+      return result.user;
+    }
+
+    async function fetchFirebaseState() {
+      const db = firebaseDb();
+      if (!db) throw new Error('Firebase is not configured yet.');
+      const snap = await db.doc(FIREBASE_DOC_PATH).get();
+      if (!snap.exists) return normalizeState({ employees: defaultEmployees, reviews: defaultReviews, settings: defaultSettings });
+      return normalizeState(snap.data());
+    }
+
+    async function saveFirebaseState() {
+      await signInAdminIfNeeded();
+      const db = firebaseDb();
+      if (!db) throw new Error('Firebase is not configured yet.');
+      const nextState = normalizeState({ ...state, updatedAt: new Date().toISOString() });
+      await db.doc(FIREBASE_DOC_PATH).set(nextState, { merge: true });
+      state = nextState;
+      saveLocalState();
+      return state;
+    }
+
     async function fetchCloudState() {
-      const response = await fetch(`${API_URL}?t=${Date.now()}`, { cache: 'no-store' });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not load cloud data.');
-      return normalizeState(payload.state);
+      try {
+        return await fetchFirebaseState();
+      } catch (firebaseError) {
+        const response = await fetch(`${API_URL}?t=${Date.now()}`, { cache: 'no-store' });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(firebaseError.message || payload.error || 'Could not load cloud data.');
+        return normalizeState(payload.state);
+      }
     }
 
     async function saveCloudState(showSaved = true) {
-      const pin = adminPin();
-      if (!pin) {
-        setSyncStatus('Enter the admin PIN, then click Turn on auto-save. Your changes are still saved on this device until unlocked.');
-        return false;
+      saveLocalState();
+      try {
+        state = normalizeState(await saveFirebaseState());
+        if (showSaved) setSyncStatus(`Saved to Firebase at ${new Date().toLocaleTimeString()}. Other devices will update on their next refresh.`);
+        return true;
+      } catch (firebaseError) {
+        const pin = adminPin();
+        if (!pin) {
+          setSyncStatus('Sign in with Google to turn on Firebase auto-save. Your changes are still saved on this device until connected.');
+          return false;
+        }
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': pin },
+          body: JSON.stringify({ state })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(firebaseError.message || payload.error || 'Could not save cloud data.');
+        state = normalizeState(payload.state);
+        saveLocalState();
+        if (showSaved) setSyncStatus(`Saved to backup API at ${new Date().toLocaleTimeString()}. Other devices will update automatically.`);
+        return true;
       }
-      saveLocalState();
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': pin },
-        body: JSON.stringify({ state })
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error || 'Could not save cloud data.');
-      state = normalizeState(payload.state);
-      saveLocalState();
-      if (showSaved) setSyncStatus(`Saved to cloud at ${new Date().toLocaleTimeString()}. Other devices will update automatically.`);
-      return true;
     }
 
     function hasSavedDeviceData() {
@@ -746,11 +817,12 @@
 
     $('savePin').addEventListener('click', async () => {
       const pin = $('adminPin').value.trim();
-      if (!pin) return setSyncStatus('Enter the admin PIN first.');
-      sessionStorage.setItem(STORAGE_KEYS.adminPin, pin);
-      localStorage.setItem(STORAGE_KEYS.adminPin, pin);
+      if (pin) {
+        sessionStorage.setItem(STORAGE_KEYS.adminPin, pin);
+        localStorage.setItem(STORAGE_KEYS.adminPin, pin);
+      }
       try { await saveCloudState(); }
-      catch (error) { setSyncStatus(`PIN did not work: ${error.message}`); }
+      catch (error) { setSyncStatus(`Auto-save did not connect: ${error.message}`); }
     });
 
     $('pushLocalData').addEventListener('click', async () => {
