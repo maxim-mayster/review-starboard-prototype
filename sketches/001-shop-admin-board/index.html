@@ -543,6 +543,32 @@
       return result.user;
     }
 
+    async function ensureSignedIn() {
+      const auth = firebaseAuth();
+      if (!auth) {
+        setSyncStatus('Firebase is not ready yet. Wait a moment and try again.');
+        return false;
+      }
+      if (auth.currentUser) return true;
+      setSyncStatus('Please sign in with Google once. After that, every change auto-saves.');
+      try {
+        await signInAdminIfNeeded();
+        setSyncStatus('Signed in. Changes now auto-save to Firebase in the background.');
+        return true;
+      } catch (error) {
+        setSyncStatus(`Sign-in needed before saving: ${error.message}`);
+        return false;
+      }
+    }
+
+    function watchAuthState() {
+      const auth = firebaseAuth();
+      if (!auth) return;
+      auth.onAuthStateChanged((user) => {
+        if (user) setSyncStatus(`Signed in as ${user.email}. Changes auto-save to Firebase.`);
+      });
+    }
+
     async function fetchFirebaseState() {
       const db = firebaseDb();
       if (!db) throw new Error('Firebase is not configured yet.');
@@ -552,7 +578,8 @@
     }
 
     async function saveFirebaseState() {
-      await signInAdminIfNeeded();
+      const auth = firebaseAuth();
+      if (!auth?.currentUser) throw new Error('Not signed in');
       const db = firebaseDb();
       if (!db) throw new Error('Firebase is not configured yet.');
       const nextState = normalizeState({ ...state, updatedAt: new Date().toISOString() });
@@ -693,7 +720,8 @@
       $('overlayAmountValue').textContent = `${overlay}%`;
     }
 
-    function addEmployee() {
+    async function addEmployee() {
+      if (!(await ensureSignedIn())) return;
       const name = $('newEmployeeName').value.trim();
       if (!name) return;
       state.employees.push({ id: crypto.randomUUID(), name, stars: 0, reviewCount: 0 });
@@ -702,7 +730,8 @@
       rerender();
     }
 
-    function saveEmployeeName(id) {
+    async function saveEmployeeName(id) {
+      if (!(await ensureSignedIn())) return;
       const input = document.querySelector(`[data-employee-name="${id}"]`);
       if (!input) return;
       const name = input.value.trim();
@@ -714,7 +743,8 @@
       rerender();
     }
 
-    function removeEmployee(id) {
+    async function removeEmployee(id) {
+      if (!(await ensureSignedIn())) return;
       state.employees = state.employees.filter(e => e.id !== id);
       state.reviews = state.reviews.filter(r => r.employeeId !== id);
       queueCloudSave();
@@ -733,7 +763,8 @@
       }
     }
 
-    function handleAssetUpload(inputId, settingKey) {
+    async function handleAssetUpload(inputId, settingKey) {
+      if (!(await ensureSignedIn())) return;
       const file = $(inputId).files?.[0];
       if (!file) return;
       if (file.size > 1_800_000) {
@@ -766,7 +797,8 @@
       return escapeHtml(value);
     }
 
-    $('addReview').addEventListener('click', () => {
+    $('addReview').addEventListener('click', async () => {
+      if (!(await ensureSignedIn())) return;
       const employeeId = $('employee').value;
       const platform = $('platform').value;
       const employee = state.employees.find(e => e.id === employeeId);
@@ -779,13 +811,15 @@
       rerender();
     });
 
-    $('resetDemo').addEventListener('click', () => {
+    $('resetDemo').addEventListener('click', async () => {
+      if (!(await ensureSignedIn())) return;
       state = normalizeState({ employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews), settings: defaultSettings });
       queueCloudSave();
       rerender();
     });
 
     $('savePin').addEventListener('click', async () => {
+      if (!(await ensureSignedIn())) return;
       try { await saveCloudState(); }
       catch (error) { setSyncStatus(`Auto-save did not connect: ${error.message}`); }
     });
@@ -796,25 +830,29 @@
     });
     $('bgUpload').addEventListener('change', () => handleAssetUpload('bgUpload', 'background'));
     $('logoUpload').addEventListener('change', () => handleAssetUpload('logoUpload', 'logo'));
-    $('blurAmount').addEventListener('input', () => {
+    $('blurAmount').addEventListener('change', async () => {
+      if (!(await ensureSignedIn())) return renderTvSettings();
       const value = Number($('blurAmount').value);
       state.settings.blur = value;
       $('blurAmountValue').textContent = `${value}px`;
       queueCloudSave();
     });
-    $('overlayAmount').addEventListener('input', () => {
+    $('overlayAmount').addEventListener('change', async () => {
+      if (!(await ensureSignedIn())) return renderTvSettings();
       const value = Number($('overlayAmount').value);
       state.settings.overlay = value;
       $('overlayAmountValue').textContent = `${value}%`;
       queueCloudSave();
     });
-    $('clearBg').addEventListener('click', () => {
+    $('clearBg').addEventListener('click', async () => {
+      if (!(await ensureSignedIn())) return;
       state.settings.background = '';
       $('bgUpload').value = '';
       queueCloudSave();
       renderBoard();
     });
-    $('clearLogo').addEventListener('click', () => {
+    $('clearLogo').addEventListener('click', async () => {
+      if (!(await ensureSignedIn())) return;
       state.settings.logo = '';
       $('logoUpload').value = '';
       queueCloudSave();
@@ -822,6 +860,7 @@
     });
 
     rerender();
+    watchAuthState();
     hydrateFromCloud();
   </script>
 </body>
