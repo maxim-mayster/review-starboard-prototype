@@ -264,6 +264,7 @@
       blur: Number(localStorage.getItem(STORAGE_KEYS.blur) || 8),
       overlay: Number(localStorage.getItem(STORAGE_KEYS.overlay) || 35)
     };
+    let displayMonthKey = '';
     let currentPage = 0;
 
     function saveLocalCopy() {
@@ -293,7 +294,9 @@
     }
 
     function normalizeState(nextState = {}) {
-      employees = (Array.isArray(nextState.employees) ? nextState.employees : fallbackEmployees).map(employee => ({
+      const displayState = nextState.tvDisplay?.employees ? nextState.tvDisplay : nextState;
+      displayMonthKey = displayState.monthKey || nextState.monthKey || '';
+      employees = (Array.isArray(displayState.employees) ? displayState.employees : fallbackEmployees).map(employee => ({
         ...employee,
         stars: Number.isFinite(Number(employee.stars)) ? Number(employee.stars) : 0,
         reviewCount: Number.isFinite(Number(employee.reviewCount)) ? Number(employee.reviewCount) : Number(employee.stars || 0)
@@ -395,8 +398,14 @@
       }, 450);
     }
 
+    function monthLabel(monthKey) {
+      const [year, month] = String(monthKey || '').split('-').map(Number);
+      return month && year ? new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1)) : 'Current month';
+    }
+
     function render() {
       applyBranding();
+      document.getElementById('monthLabel').textContent = monthLabel(displayMonthKey);
       const sorted = list();
       const podium = sorted.slice(0, 3);
       document.getElementById('podium').innerHTML = podium.map((p, i) => `

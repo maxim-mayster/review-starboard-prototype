@@ -104,6 +104,8 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+    .tab-button.active { background: #17385f; color: white; }
+    .hidden { display: none !important; }
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -373,11 +375,13 @@
           <p>Editable employee list plus the monthly leaderboard that stays saved after refresh.</p>
         </div>
         <div class="toolbar-actions">
+          <button class="ghost tab-button active" id="currentMonthTab">Current month</button>
+          <button class="ghost tab-button" id="archiveTab">Archived months</button>
           <button class="primary" id="endMonthArchive">End month + archive</button>
         </div>
       </section>
 
-      <section class="summary-grid">
+      <section class="summary-grid" id="currentMonthView">
         <div class="panel summary-card"><div class="label">Top performer</div><div class="value" id="topPerformer">—</div></div>
         <div class="panel summary-card"><div class="label">Google reviews</div><div class="value" id="googleCount">0</div></div>
         <div class="panel summary-card"><div class="label">Facebook reviews</div><div class="value" id="facebookCount">0</div></div>
@@ -385,7 +389,7 @@
         <div class="panel summary-card"><div class="label">TV assets</div><div class="value" id="tvAssetStatus">Ready</div></div>
       </section>
 
-      <section class="content-grid">
+      <section class="content-grid" id="currentBoardView">
         <div class="panel leaderboard">
           <div class="section-head">
             <div>
@@ -410,7 +414,7 @@
             <div>
               <img id="tvLogoPreview" class="tv-logo-preview" alt="TV logo preview" style="display:none;" />
               <div class="small" style="color:rgba(255,255,255,.7);">TV preview</div>
-              <strong style="font-size:26px; display:block; margin-top:6px;">Top 3 this month</strong>
+              <strong id="tvPreviewTitle" style="font-size:26px; display:block; margin-top:6px;">Top 3 this month</strong>
             </div>
             <div class="big-screen-board" id="tvPreview"></div>
             <div style="margin-top:12px;">
@@ -420,6 +424,26 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="panel leaderboard hidden" id="archiveView">
+        <div class="section-head">
+          <div>
+            <strong style="font-size:22px;">Archived months</strong>
+            <div class="small">Review a completed month and cast its leaderboard to the TV board.</div>
+          </div>
+          <div class="toolbar-actions">
+            <select id="archiveSelect" style="min-width:220px;"></select>
+            <button class="primary" id="showArchiveOnTv">Show selected month on TV</button>
+            <button class="ghost" id="showCurrentOnTv">Return TV to current month</button>
+          </div>
+        </div>
+        <div id="archiveEmpty" class="preview-note hidden">No archived months yet. Use “End month + archive” when a month is complete.</div>
+        <table id="archiveTable">
+          <thead><tr><th>Rank</th><th>Employee</th><th>Stars</th></tr></thead>
+          <tbody id="archiveLeaderboardBody"></tbody>
+        </table>
+        <div id="archiveSummary" class="small" style="margin-top:14px;"></div>
       </section>
     </main>
   </div>
@@ -431,7 +455,8 @@
       background: 'review-starboard-tv-bg',
       logo: 'review-starboard-tv-logo',
       blur: 'review-starboard-tv-blur',
-      overlay: 'review-starboard-tv-overlay'
+      overlay: 'review-starboard-tv-overlay',
+      tvDisplay: 'review-starboard-tv-display'
     };
 
     const API_URL = '/api/state';
@@ -495,11 +520,13 @@
       const reviews = Array.isArray(nextState?.reviews) ? nextState.reviews : structuredClone(defaultReviews);
       const settings = { ...defaultSettings, ...(nextState?.settings || {}) };
       const archives = Array.isArray(nextState?.archives) ? nextState.archives : [];
+      const tvDisplay = nextState?.tvDisplay || null;
       return {
         employees,
         reviews,
         settings,
         archives,
+        tvDisplay,
         monthKey: nextState?.monthKey || DEFAULT_MONTH_KEY,
         updatedAt: nextState?.updatedAt
       };
@@ -509,7 +536,8 @@
       return normalizeState({
         employees: JSON.parse(localStorage.getItem(STORAGE_KEYS.employees) || 'null'),
         reviews: JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || 'null'),
-        settings: readSettingsFromLocalStorage()
+        settings: readSettingsFromLocalStorage(),
+        tvDisplay: JSON.parse(localStorage.getItem(STORAGE_KEYS.tvDisplay) || 'null')
       });
     }
 
@@ -517,6 +545,7 @@
       localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(state.employees));
       localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(state.reviews));
       writeSettingsToLocalStorage(state.settings);
+      localStorage.setItem(STORAGE_KEYS.tvDisplay, JSON.stringify(state.tvDisplay || null));
     }
 
     function setSyncStatus(message) {
@@ -667,6 +696,56 @@
       return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
     }
 
+    function archiveById(id) {
+      return state.archives.find(archive => archive.id === id) || state.archives[0] || null;
+    }
+
+    function renderArchiveView() {
+      const select = $('archiveSelect');
+      const archives = [...state.archives].sort((a, b) => String(b.monthKey).localeCompare(String(a.monthKey)));
+      $('archiveEmpty').classList.toggle('hidden', archives.length > 0);
+      $('archiveTable').classList.toggle('hidden', archives.length === 0);
+      $('showArchiveOnTv').disabled = archives.length === 0;
+      select.innerHTML = archives.map(archive => `<option value="${escapeAttribute(archive.id)}">${escapeHtml(monthLabel(archive.monthKey))}</option>`).join('');
+      if (!archives.length) {
+        $('archiveLeaderboardBody').innerHTML = '';
+        $('archiveSummary').textContent = '';
+        return;
+      }
+      const archive = archiveById(select.value);
+      const employees = [...archive.employees].sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
+      $('archiveLeaderboardBody').innerHTML = employees.map((employee, index) => `
+        <tr><td><span class="rank">${index + 1}</span></td><td><strong>${escapeHtml(employee.name)}</strong></td><td class="star-count">${'★'.repeat(Math.min(employee.stars, 8))}<span style="font-size:16px; color:#122033; margin-left:8px;">${employee.stars}</span></td></tr>
+      `).join('');
+      $('archiveSummary').textContent = `${monthLabel(archive.monthKey)} · ${archive.reviews.length} reviews · archived ${new Date(archive.endedAt).toLocaleString()}`;
+    }
+
+    function setAdminTab(tab) {
+      const archiveVisible = tab === 'archive';
+      $('currentMonthView').classList.toggle('hidden', archiveVisible);
+      $('currentBoardView').classList.toggle('hidden', archiveVisible);
+      $('archiveView').classList.toggle('hidden', !archiveVisible);
+      $('currentMonthTab').classList.toggle('active', !archiveVisible);
+      $('archiveTab').classList.toggle('active', archiveVisible);
+      if (archiveVisible) renderArchiveView();
+    }
+
+    async function castTvDisplay(display) {
+      if (!(await ensureSignedIn())) return;
+      const previousDisplay = structuredClone(state.tvDisplay);
+      state.tvDisplay = display;
+      const saved = await saveCloudState(false);
+      if (!saved) {
+        state.tvDisplay = previousDisplay;
+        saveLocalState();
+        renderBoard();
+        setSyncStatus('TV display was not changed because the cloud save failed.');
+        return;
+      }
+      renderBoard();
+      setSyncStatus(display ? `${monthLabel(display.monthKey)} is now being shown on the TV board.` : 'TV board returned to the current month.');
+    }
+
     function renderEmployeeOptions() {
       const employees = sortedEmployees();
       $('employee').innerHTML = employees.length
@@ -702,7 +781,10 @@
 
     function renderBoard() {
       const employees = sortedEmployees();
+      const tvEmployees = state.tvDisplay?.employees || employees;
+      const tvTitle = state.tvDisplay ? `Top 3 · ${monthLabel(state.tvDisplay.monthKey)}` : 'Top 3 this month';
       $('monthLabel').textContent = monthLabel(state.monthKey);
+      $('tvPreviewTitle').textContent = tvTitle;
       $('leaderboardBody').innerHTML = employees.map((e, i) => `
         <tr>
           <td><span class="rank">${i + 1}</span></td>
@@ -711,7 +793,7 @@
         </tr>
       `).join('');
 
-      const top3 = employees.slice(0, 3);
+      const top3 = tvEmployees.slice(0, 3);
       $('tvPreview').innerHTML = top3.map((e, i) => `
         <div class="big-entry">
           <div class="small" style="color:rgba(255,255,255,.7);">#${i+1}</div>
@@ -848,6 +930,7 @@
       renderEmployeeOptions();
       renderEmployeeManager();
       renderBoard();
+      if (!$('archiveView').classList.contains('hidden')) renderArchiveView();
     }
 
     function escapeHtml(value) {
@@ -878,7 +961,7 @@
 
     $('resetDemo').addEventListener('click', async () => {
       if (!(await ensureSignedIn())) return;
-      state = normalizeState({ employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews), settings: defaultSettings });
+      state = normalizeState({ ...state, employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews), settings: defaultSettings });
       queueCloudSave();
       rerender();
     });
@@ -889,6 +972,20 @@
       catch (error) { setSyncStatus(`Auto-save did not connect: ${error.message}`); }
     });
     $('endMonthArchive').addEventListener('click', endMonthAndArchive);
+    $('currentMonthTab').addEventListener('click', () => setAdminTab('current'));
+    $('archiveTab').addEventListener('click', () => setAdminTab('archive'));
+    $('archiveSelect').addEventListener('change', renderArchiveView);
+    $('showArchiveOnTv').addEventListener('click', async () => {
+      const archive = archiveById($('archiveSelect').value);
+      if (!archive) return;
+      await castTvDisplay({
+        mode: 'archive',
+        monthKey: archive.monthKey,
+        employees: structuredClone(archive.employees),
+        reviews: structuredClone(archive.reviews)
+      });
+    });
+    $('showCurrentOnTv').addEventListener('click', () => castTvDisplay(null));
 
     $('addEmployee').addEventListener('click', addEmployee);
     $('newEmployeeName').addEventListener('keydown', (event) => {
