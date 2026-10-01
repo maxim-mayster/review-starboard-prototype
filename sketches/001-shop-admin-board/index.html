@@ -373,7 +373,7 @@
           <p>Editable employee list plus the monthly leaderboard that stays saved after refresh.</p>
         </div>
         <div class="toolbar-actions">
-          <button class="primary">End month + archive</button>
+          <button class="primary" id="endMonthArchive">End month + archive</button>
         </div>
       </section>
 
@@ -463,6 +463,7 @@
     ];
 
     const defaultSettings = { background: '', logo: '', blur: 8, overlay: 35 };
+    const DEFAULT_MONTH_KEY = '2026-09';
     const $ = (id) => document.getElementById(id);
     let state = loadLocalState();
     let syncTimer = null;
@@ -493,7 +494,15 @@
         }));
       const reviews = Array.isArray(nextState?.reviews) ? nextState.reviews : structuredClone(defaultReviews);
       const settings = { ...defaultSettings, ...(nextState?.settings || {}) };
-      return { employees, reviews, settings, updatedAt: nextState?.updatedAt };
+      const archives = Array.isArray(nextState?.archives) ? nextState.archives : [];
+      return {
+        employees,
+        reviews,
+        settings,
+        archives,
+        monthKey: nextState?.monthKey || DEFAULT_MONTH_KEY,
+        updatedAt: nextState?.updatedAt
+      };
     }
 
     function loadLocalState() {
@@ -646,6 +655,18 @@
       return [...state.employees].sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
     }
 
+    function monthLabel(monthKey) {
+      const [year, month] = String(monthKey || DEFAULT_MONTH_KEY).split('-').map(Number);
+      return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
+        .format(new Date(year, (month || 1) - 1, 1));
+    }
+
+    function nextMonthKey(monthKey) {
+      const [year, month] = String(monthKey || DEFAULT_MONTH_KEY).split('-').map(Number);
+      const next = new Date(year, (month || 1), 1);
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    }
+
     function renderEmployeeOptions() {
       const employees = sortedEmployees();
       $('employee').innerHTML = employees.length
@@ -681,6 +702,7 @@
 
     function renderBoard() {
       const employees = sortedEmployees();
+      $('monthLabel').textContent = monthLabel(state.monthKey);
       $('leaderboardBody').innerHTML = employees.map((e, i) => `
         <tr>
           <td><span class="rank">${i + 1}</span></td>
@@ -718,6 +740,49 @@
       $('overlayAmount').value = String(overlay);
       $('blurAmountValue').textContent = `${blur}px`;
       $('overlayAmountValue').textContent = `${overlay}%`;
+    }
+
+    async function endMonthAndArchive() {
+      const button = $('endMonthArchive');
+      if (button.disabled) return;
+      if (!(await ensureSignedIn())) return;
+      if (!state.reviews.length && !state.employees.some(employee => employee.stars || employee.reviewCount)) {
+        setSyncStatus('There are no review stars to archive for this month.');
+        return;
+      }
+      const confirmed = window.confirm(`Archive ${monthLabel(state.monthKey)} and start ${monthLabel(nextMonthKey(state.monthKey))}?`);
+      if (!confirmed) return;
+
+      const previousState = structuredClone(state);
+      const archive = {
+        id: `${state.monthKey}-${Date.now()}`,
+        monthKey: state.monthKey,
+        endedAt: new Date().toISOString(),
+        employees: structuredClone(state.employees),
+        reviews: structuredClone(state.reviews)
+      };
+      button.disabled = true;
+      button.textContent = 'Archiving…';
+      state = normalizeState({
+        ...state,
+        archives: [...state.archives, archive],
+        monthKey: nextMonthKey(state.monthKey),
+        employees: state.employees.map(employee => ({ ...employee, stars: 0, reviewCount: 0 })),
+        reviews: []
+      });
+      rerender();
+
+      const saved = await saveCloudState(false);
+      if (!saved) {
+        state = previousState;
+        saveLocalState();
+        rerender();
+        setSyncStatus('Archive was not saved, so the current month was restored. Fix sign-in/network access and try again.');
+      } else {
+        setSyncStatus(`${monthLabel(archive.monthKey)} archived. New month started and saved to Firebase.`);
+      }
+      button.disabled = false;
+      button.textContent = 'End month + archive';
     }
 
     async function addEmployee() {
@@ -823,6 +888,7 @@
       try { await saveCloudState(); }
       catch (error) { setSyncStatus(`Auto-save did not connect: ${error.message}`); }
     });
+    $('endMonthArchive').addEventListener('click', endMonthAndArchive);
 
     $('addEmployee').addEventListener('click', addEmployee);
     $('newEmployeeName').addEventListener('keydown', (event) => {
