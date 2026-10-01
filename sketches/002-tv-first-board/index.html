@@ -60,6 +60,12 @@
       align-items: center;
       gap: 18px;
       flex-wrap: wrap;
+      min-height: clamp(110px, 13vh, 190px);
+    }
+    .topbar > div:first-child {
+      display: flex;
+      align-items: center;
+      min-height: 100%;
     }
     .brand {
       color: #f7fbff;
@@ -69,8 +75,8 @@
       letter-spacing: -0.05em;
     }
     .logo {
-      max-width: min(40vw, 460px);
-      max-height: 120px;
+      max-width: min(52vw, 620px);
+      max-height: 190px;
       object-fit: contain;
       display: none;
       filter: drop-shadow(0 10px 20px rgba(0,0,0,.25));
@@ -98,7 +104,9 @@
       backdrop-filter: blur(14px);
     }
     .podium {
+      position: relative;
       padding: 20px;
+      padding-top: clamp(82px, 10vh, 128px);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
@@ -112,9 +120,20 @@
       border: 1px solid rgba(255,255,255,.08);
       text-align: center;
     }
-    .podium-card.first { min-height: min(300px, 42vh); border-color: rgba(255,198,71,.55); }
-    .podium-card.second { min-height: min(250px, 36vh); }
-    .podium-card.third { min-height: min(220px, 32vh); }
+    .podium::before {
+      content: "Monthly champions";
+      position: absolute;
+      top: 26px;
+      left: 28px;
+      color: rgba(255,255,255,.72);
+      font-size: clamp(18px, 1.6vw, 26px);
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .podium-card.first { min-height: min(360px, 50vh); border-color: rgba(255,198,71,.55); }
+    .podium-card.second { min-height: min(300px, 44vh); }
+    .podium-card.third { min-height: min(270px, 40vh); }
     .rank {
       width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 16px;
       display: flex; align-items: center; justify-content: center;
@@ -185,7 +204,7 @@
       .wrap { padding: 14px; gap: 12px; }
       .topbar { gap: 10px; }
       .brand { font-size: clamp(30px, 5vw, 54px); }
-      .logo { max-height: 92px; }
+      .logo { max-height: 120px; }
       .month { padding: 12px 18px; font-size: clamp(18px, 3vw, 30px); }
       .hero { grid-template-columns: .78fr 1fr; gap: 12px; }
       .podium { padding: 16px; gap: 10px; }
