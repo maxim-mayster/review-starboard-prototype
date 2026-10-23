@@ -108,7 +108,7 @@
     .hidden { display: none !important; }
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
     .summary-card { padding: 18px; }
@@ -289,7 +289,7 @@
           <strong id="monthLabel">September 2026</strong>
         </div>
         <div class="stat">
-          <div class="muted">Reviews logged</div>
+          <div class="muted">Name mentions logged</div>
           <strong id="reviewCount">0</strong>
         </div>
         <div class="stat">
@@ -399,9 +399,6 @@
 
       <section class="summary-grid" id="currentMonthView">
         <div class="panel summary-card"><div class="label">Top performer</div><div class="value" id="topPerformer">—</div></div>
-        <div class="panel summary-card"><div class="label">Google reviews</div><div class="value" id="googleCount">0</div></div>
-        <div class="panel summary-card"><div class="label">Facebook reviews</div><div class="value" id="facebookCount">0</div></div>
-        <div class="panel summary-card"><div class="label">Yelp reviews</div><div class="value" id="yelpCount">0</div></div>
         <div class="panel summary-card"><div class="label">TV assets</div><div class="value" id="tvAssetStatus">Ready</div></div>
       </section>
 
@@ -868,9 +865,6 @@
       `).join('') || '<div class="small" style="color:rgba(255,255,255,.7);">No employees added yet.</div>';
 
       $('topPerformer').textContent = employees[0]?.name || '—';
-      $('googleCount').textContent = state.reviews.filter(r => r.platform === 'Google').length;
-      $('facebookCount').textContent = state.reviews.filter(r => r.platform === 'Facebook').length;
-      $('yelpCount').textContent = state.reviews.filter(r => r.platform === 'Yelp').length;
       $('reviewCount').textContent = state.reviews.length;
       $('employeeCount').textContent = state.employees.length;
       const hasBg = !!state.settings.background;
