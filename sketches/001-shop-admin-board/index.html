@@ -6,262 +6,275 @@
   <title>Review Starboard — Admin Board</title>
   <style>
     * { box-sizing: border-box; }
+    :root {
+      --navy: #16365f;
+      --navy-deep: #0f2745;
+      --orange: #f36f21;
+      --orange-soft: #fff1e8;
+      --ink: #122033;
+      --ink-soft: #5e738b;
+      --line: #e3eaf2;
+      --surface: #ffffff;
+      --page: #f3f6fb;
+      --gold: #f5b82e;
+      --silver: #a9b6c4;
+      --bronze: #d08a4e;
+      --ok: #1f9d55;
+      --warn: #e0a100;
+    }
     body {
       margin: 0;
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f3f6fb;
-      color: #122033;
+      background: var(--page);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
     }
-    .app {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      min-height: 100vh;
-    }
-    .sidebar {
-      background: linear-gradient(180deg, #16365f, #0f2745);
+    input, select, button { font: inherit; }
+    a { color: inherit; }
+    .hidden { display: none !important; }
+
+    /* Header */
+    .topbar {
+      background: linear-gradient(120deg, var(--navy), var(--navy-deep));
       color: white;
-      padding: 24px;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
-    .brand {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin: 0 0 6px;
+    .brand-block { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--orange); color: white;
+      display: grid; place-items: center;
+      font-size: 22px; font-weight: 900;
     }
-    .muted { color: rgba(255,255,255,.75); }
-    .stats {
-      display: grid;
-      gap: 12px;
-      margin: 26px 0 20px;
+    .brand { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 2px; }
+    .topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .topbar .btn-ghost-dark {
+      background: rgba(255,255,255,.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,.18);
+      text-decoration: none;
+      display: inline-flex; align-items: center;
     }
-    .stat {
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 16px;
-      padding: 16px;
-    }
-    .stat strong { display: block; font-size: 28px; margin-top: 6px; }
-    .panel {
+    .topbar .btn-ghost-dark:hover { background: rgba(255,255,255,.18); }
+
+    .status-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 28px;
       background: white;
-      border-radius: 18px;
-      border: 1px solid #dde6f0;
-      box-shadow: 0 12px 30px rgba(16, 35, 57, .08);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--ink-soft);
     }
-    .review-form, .employee-manager, .tv-settings {
-      margin-top: 18px;
-      padding: 18px;
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--warn);
+      flex: none;
     }
-    .review-form h3, .employee-manager h3, .tv-settings h3 { margin: 0 0 14px; }
+    .status-dot.ok { background: var(--ok); }
+
+    /* Buttons */
+    button, .btn {
+      cursor: pointer;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 14px;
+      transition: background .15s, opacity .15s;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .primary { background: var(--orange); color: white; }
+    .primary:hover:not(:disabled) { background: #e2601a; }
+    .ghost { background: #eaf1f8; color: var(--navy); }
+    .ghost:hover:not(:disabled) { background: #dde8f3; }
+    .outline { background: white; color: var(--navy); border: 1px solid #cfdae7; }
+    .outline:hover:not(:disabled) { background: #f5f8fc; }
+    .danger { background: #fff0f0; color: #b63c32; }
+    .danger:hover:not(:disabled) { background: #ffe2e0; }
+    .btn-block { width: 100%; padding: 13px 16px; font-size: 15px; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-row > button { flex: 1; }
+
+    /* Forms */
     .field { margin-bottom: 12px; }
     label {
       display: block;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: #46607d;
       margin-bottom: 6px;
-    }
-    input, select, button {
-      font: inherit;
+      text-transform: uppercase;
+      letter-spacing: .04em;
     }
     input, select {
       width: 100%;
       border: 1px solid #cfdae7;
-      border-radius: 12px;
-      padding: 12px 13px;
+      border-radius: 10px;
+      padding: 11px 12px;
       background: #f9fbfd;
+      color: var(--ink);
     }
-    button {
-      cursor: pointer;
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-weight: 800;
-    }
-    .primary { background: #f36f21; color: white; }
-    .ghost { background: #e8f0f8; color: #17385f; }
-    .danger { background: #fff0f0; color: #b63c32; }
-    .main {
-      padding: 24px;
+    input:focus, select:focus { outline: 2px solid rgba(243,111,33,.35); border-color: var(--orange); }
+
+    /* Layout */
+    .layout {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 28px 40px;
       display: grid;
-      gap: 20px;
-      grid-template-rows: auto auto 1fr;
-    }
-    .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .toolbar h1 {
-      margin: 0;
-      font-size: 34px;
-      letter-spacing: -0.04em;
-    }
-    .toolbar p { margin: 6px 0 0; color: #5e738b; }
-    .toolbar-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .tab-button.active { background: #17385f; color: white; }
-    .hidden { display: none !important; }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .summary-card { padding: 18px; }
-    .summary-card .label { color: #698199; font-size: 13px; font-weight: 700; }
-    .summary-card .value { font-size: 30px; font-weight: 800; margin-top: 8px; }
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1.45fr .85fr;
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 24px;
       align-items: start;
     }
-    .leaderboard { padding: 18px; }
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      gap: 10px;
-      flex-wrap: wrap;
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(16, 35, 57, .05);
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .card-pad { padding: 20px; }
+    .card-title { margin: 0 0 14px; font-size: 16px; font-weight: 800; }
+    .muted { color: var(--ink-soft); font-size: 13px; }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: 1.35fr 1.35fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
     }
-    th, td {
-      text-align: left;
-      padding: 12px 10px;
-      border-bottom: 1px solid #e7eef6;
+    .stat { padding: 16px 18px; }
+    .stat .label { color: var(--ink-soft); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .stat .value { font-size: 22px; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat.highlight .value { color: var(--orange); }
+
+    /* Leaderboard card */
+    .board-head {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; flex-wrap: wrap;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
     }
-    th {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #6a7f96;
-    }
+    .tabs { display: inline-flex; background: #eef3f9; border-radius: 10px; padding: 4px; gap: 2px; }
+    .tab { background: transparent; color: var(--ink-soft); padding: 8px 14px; }
+    .tab.active { background: white; color: var(--navy); box-shadow: 0 1px 3px rgba(16,35,57,.12); }
+    .board-body { padding: 8px 20px 20px; }
+    .board-note { margin: 10px 0 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 11px 8px; border-bottom: 1px solid #eef3f8; vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    .col-rank { width: 48px; }
+    .col-stars { width: 80px; text-align: right; white-space: nowrap; font-weight: 800; color: var(--orange); font-size: 18px; }
+    .emp-name { font-weight: 700; }
     .rank {
-      width: 38px;
-      height: 38px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      background: #edf4fb;
-      color: #16365f;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px;
+      background: #edf2f8; color: var(--navy);
     }
-    .star-count {
-      font-size: 26px;
-      font-weight: 800;
-      color: #f36f21;
-    }
-    .pill {
-      display: inline-flex;
-      border-radius: 999px;
-      padding: 6px 9px;
-      font-size: 12px;
-      font-weight: 800;
-      margin-right: 6px;
-      margin-bottom: 6px;
-    }
-    .google { background: #e7f0ff; color: #1a55c7; }
-    .facebook { background: #e8efff; color: #3056d3; }
-    .yelp { background: #ffe9e9; color: #c7392f; }
-    .employee-list {
-      display: grid;
-      gap: 10px;
-      max-height: 270px;
-      overflow: auto;
-      padding-right: 4px;
-    }
-    .employee-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 8px;
-      align-items: center;
-      padding: 10px;
-      border: 1px solid #e5edf5;
-      border-radius: 14px;
-      background: #fbfdff;
-    }
-    .employee-row input {
-      background: white;
-      padding: 10px 12px;
-    }
-    .employee-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .tv-settings .upload-row {
-      display: grid;
-      gap: 10px;
-    }
-    .upload-label {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 12px;
-      padding: 12px 16px;
-      background: #e8f0f8;
-      color: #17385f;
-      font-weight: 800;
+    .rank.r1 { background: var(--gold); color: #4a3300; }
+    .rank.r2 { background: var(--silver); color: #1f2a36; }
+    .rank.r3 { background: var(--bronze); color: #3b1e05; }
+    .bar { height: 8px; border-radius: 99px; background: #eef3f8; overflow: hidden; }
+    .bar span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #ffb36b, var(--orange)); }
+    .col-bar { width: 40%; }
+    .archive-controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 8px; }
+    .archive-controls select { flex: 1 1 200px; width: auto; }
+
+    /* Side column */
+    .side { display: grid; gap: 14px; }
+    details.card > summary {
+      list-style: none;
       cursor: pointer;
-      border: 1px solid #cfdae7;
+      padding: 15px 20px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 15px;
+      user-select: none;
     }
+    details.card > summary::-webkit-details-marker { display: none; }
+    details.card > summary::after {
+      content: "";
+      margin-left: 6px;
+      width: 8px; height: 8px;
+      border-right: 2px solid var(--ink-soft);
+      border-bottom: 2px solid var(--ink-soft);
+      transform: rotate(45deg);
+      transition: transform .15s;
+      flex: none;
+    }
+    details.card[open] > summary::after { transform: rotate(-135deg); }
+    details.card > summary .chip, details.card > summary .summary-hint { margin-left: auto; }
+    .chip {
+      font-size: 12px; font-weight: 700;
+      background: #eef3f9; color: var(--ink-soft);
+      padding: 3px 9px; border-radius: 99px;
+    }
+    .details-body { padding: 0 20px 20px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .summary-hint { font-weight: 500; font-size: 13px; color: var(--ink-soft); }
+
+    .employee-add { display: flex; gap: 8px; margin-bottom: 14px; }
+    .employee-add input { flex: 1; }
+    .employee-list { display: grid; gap: 8px; max-height: 320px; overflow: auto; padding-right: 2px; }
+    .employee-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; }
+    .employee-row input { padding: 9px 11px; background: white; }
+    .employee-row button { padding: 9px 11px; font-size: 13px; }
+
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .upload-label {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; padding: 10px 12px;
+      background: #eaf1f8; color: var(--navy);
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      text-transform: none; letter-spacing: 0; margin: 0;
+    }
+    .upload-label:hover { background: #dde8f3; }
     .upload-label input { display: none; }
-    .preview-note { color: #5e738b; font-size: 13px; }
-    .slider-wrap {
-      display: grid;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .slider-wrap input[type="range"] {
-      width: 100%;
-      padding: 0;
-      background: transparent;
-      border: 0;
-    }
-    .slider-value {
-      font-size: 12px;
-      color: #5e738b;
-      font-weight: 700;
-    }
-    .big-screen {
-      background: #112947;
+    .slider-row { display: grid; grid-template-columns: 1fr 52px; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .slider-row input[type="range"] { padding: 0; background: transparent; border: 0; accent-color: var(--orange); }
+    .slider-value { font-size: 13px; color: var(--ink-soft); font-weight: 700; text-align: right; }
+    .preview-note { color: var(--ink-soft); font-size: 12px; margin-top: 10px; }
+
+    .tv-mini {
+      background: linear-gradient(160deg, #18345b, #081322);
       color: white;
-      border-radius: 18px;
-      padding: 18px;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
     }
-    .big-screen-board {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 12px;
-      margin-top: 14px;
-    }
+    .tv-mini-title { font-size: 14px; font-weight: 800; margin-top: 2px; }
+    .tv-mini-board { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-top: 10px; }
     .big-entry {
       background: rgba(255,255,255,.08);
       border: 1px solid rgba(255,255,255,.1);
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      min-width: 0;
     }
-    .big-entry strong { display: block; font-size: 22px; margin-bottom: 6px; }
-    .small { font-size: 13px; color: #68809a; }
-    .tv-logo-preview {
-      max-width: 100%;
-      max-height: 90px;
-      object-fit: contain;
-      display: block;
-      margin-bottom: 10px;
+    .big-entry .pos { font-size: 11px; color: rgba(255,255,255,.65); }
+    .big-entry strong { display: block; font-size: 13px; margin: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .big-entry .pts { font-size: 18px; font-weight: 800; color: #ffbf47; }
+    .tv-logo-preview { max-width: 100%; max-height: 44px; object-fit: contain; display: block; margin-bottom: 8px; }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { display: contents; }
+      .side > section { order: -1; }
+      .side > details { order: 1; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (max-width: 1200px) {
-      .app, .content-grid { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 600px) {
+      .topbar, .status-bar { padding-left: 16px; padding-right: 16px; }
+      .layout { padding: 16px; gap: 16px; }
+      .col-bar { display: none; }
+      .stat .value { font-size: 19px; white-space: normal; }
+      .board-head, .board-body { padding-left: 14px; padding-right: 14px; }
     }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -269,37 +282,67 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-mark">★</div>
       <div>
         <div class="brand">Review Starboard</div>
-        <div class="muted">Simple admin controls for monthly employee review stars.</div>
-        <div class="panel review-form" style="margin-top:18px; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.14);">
-          <h3 style="margin:0 0 10px;">Firebase auto-save</h3>
-          <div class="employee-actions">
-            <button class="ghost" id="savePin">Sign in once</button>
+        <div class="brand-sub">Mayster Heating &amp; Air · Admin</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost-dark" href="../002-tv-first-board/index.html" target="_blank" rel="noopener">Open TV board ↗</a>
+      <button class="btn-ghost-dark" id="savePin">Sign in with Google</button>
+    </div>
+  </header>
+  <div class="status-bar">
+    <span class="status-dot" id="syncDot"></span>
+    <span id="syncStatus">Loading Firebase data…</span>
+  </div>
+
+  <div class="layout">
+    <main>
+      <section class="stats">
+        <div class="card stat"><div class="label">Month</div><div class="value" id="monthLabel">September 2026</div></div>
+        <div class="card stat highlight"><div class="label">Top performer</div><div class="value" id="topPerformer">—</div></div>
+        <div class="card stat"><div class="label">Name mentions</div><div class="value" id="reviewCount">0</div></div>
+        <div class="card stat"><div class="label">Employees</div><div class="value" id="employeeCount">0</div></div>
+      </section>
+
+      <section class="card">
+        <div class="board-head">
+          <div class="tabs">
+            <button class="tab active" id="currentMonthTab">This month</button>
+            <button class="tab" id="archiveTab">Past months</button>
           </div>
-          <div id="syncStatus" class="preview-note" style="color:rgba(255,255,255,.78); margin-top:10px;">Loading Firebase data… After Google sign-in is connected once, every change auto-saves in the background.</div>
+          <button class="outline" id="endMonthArchive">End month + archive</button>
         </div>
-      </div>
 
-      <div class="stats">
-        <div class="stat">
-          <div class="muted">Current month</div>
-          <strong id="monthLabel">September 2026</strong>
+        <div class="board-body" id="currentBoardView">
+          <div class="muted board-note">One star per review that mentions an employee by name. After 5 reviews, each new one is worth 2 stars.</div>
+          <table>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
         </div>
-        <div class="stat">
-          <div class="muted">Name mentions logged</div>
-          <strong id="reviewCount">0</strong>
-        </div>
-        <div class="stat">
-          <div class="muted">Employees on board</div>
-          <strong id="employeeCount">0</strong>
-        </div>
-      </div>
 
-      <div class="panel review-form">
-        <h3>Add a star</h3>
+        <div class="board-body hidden" id="archiveView">
+          <div class="archive-controls">
+            <select id="archiveSelect"></select>
+            <button class="primary" id="showArchiveOnTv">Show on TV</button>
+            <button class="ghost" id="showCurrentOnTv">Back to current month</button>
+          </div>
+          <div id="archiveEmpty" class="muted board-note hidden">No archived months yet. Use “End month + archive” when a month is complete.</div>
+          <table id="archiveTable">
+            <tbody id="archiveLeaderboardBody"></tbody>
+          </table>
+          <div id="archiveSummary" class="muted" style="margin-top:12px;"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <section class="card card-pad">
+        <h2 class="card-title">Add a star</h2>
         <div class="field">
           <label for="employee">Employee</label>
           <select id="employee"></select>
@@ -312,153 +355,81 @@
             <option>Yelp</option>
           </select>
         </div>
-        <div style="display:flex; gap:10px;">
-          <button class="primary" id="addReview">Add star</button>
-          <button class="ghost" id="resetDemo">Reset demo</button>
-        </div>
-      </div>
+        <button class="primary btn-block" id="addReview">★ Add star</button>
+      </section>
 
-      <div class="panel review-form">
-        <h3>Fix a star</h3>
-        <div class="field">
-          <label for="fixFromEmployee">Take last star from</label>
-          <select id="fixFromEmployee"></select>
+      <details class="card">
+        <summary>Fix a star <span class="summary-hint">Move or remove</span></summary>
+        <div class="details-body">
+          <div class="field">
+            <label for="fixFromEmployee">Take last star from</label>
+            <select id="fixFromEmployee"></select>
+          </div>
+          <div class="field">
+            <label for="fixToEmployee">Move it to</label>
+            <select id="fixToEmployee"></select>
+          </div>
+          <div class="btn-row">
+            <button class="primary" id="moveStar">Move star</button>
+            <button class="danger" id="removeStar">Remove star</button>
+          </div>
         </div>
-        <div class="field">
-          <label for="fixToEmployee">Move it to</label>
-          <select id="fixToEmployee"></select>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <button class="primary" id="moveStar">Move star</button>
-          <button class="danger" id="removeStar">Remove star</button>
-        </div>
-      </div>
+      </details>
 
-      <div class="panel employee-manager">
-        <h3>Manage employees</h3>
-        <div class="field">
-          <label for="newEmployeeName">Add employee</label>
-          <input id="newEmployeeName" placeholder="Type a new employee name" />
+      <details class="card">
+        <summary>Employees <span class="chip" id="employeeChip">0</span></summary>
+        <div class="details-body">
+          <div class="employee-add">
+            <input id="newEmployeeName" placeholder="New employee name" aria-label="New employee name" />
+            <button class="primary" id="addEmployee">Add</button>
+          </div>
+          <div id="employeeList" class="employee-list"></div>
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:14px;">
-          <button class="primary" id="addEmployee">Add employee</button>
-        </div>
-        <div id="employeeList" class="employee-list"></div>
-      </div>
+      </details>
 
-      <div class="panel tv-settings">
-        <h3>TV board branding</h3>
-        <div class="upload-row">
-          <div>
-            <label>Background image</label>
-            <label class="upload-label">Upload TV background
+      <details class="card">
+        <summary>TV board <span class="chip" id="tvAssetStatus">Ready</span></summary>
+        <div class="details-body">
+          <div class="tv-mini">
+            <img id="tvLogoPreview" class="tv-logo-preview" alt="TV logo preview" style="display:none;" />
+            <div class="muted" style="color:rgba(255,255,255,.65); font-size:11px; text-transform:uppercase; letter-spacing:.06em;">Now on TV</div>
+            <div class="tv-mini-title" id="tvPreviewTitle">Top 3 this month</div>
+            <div class="tv-mini-board" id="tvPreview"></div>
+          </div>
+          <div class="upload-grid">
+            <label class="upload-label">Upload background
               <input type="file" id="bgUpload" accept="image/*" />
             </label>
-          </div>
-          <div>
-            <label>Logo for TV board</label>
-            <label class="upload-label">Upload TV logo
+            <label class="upload-label">Upload logo
               <input type="file" id="logoUpload" accept="image/*" />
             </label>
           </div>
-          <div>
-            <label for="blurAmount">Background blur</label>
-            <div class="slider-wrap">
-              <input type="range" id="blurAmount" min="0" max="24" step="1" />
-              <div class="slider-value" id="blurAmountValue">8px</div>
-            </div>
+          <label for="blurAmount">Background blur</label>
+          <div class="slider-row">
+            <input type="range" id="blurAmount" min="0" max="24" step="1" />
+            <div class="slider-value" id="blurAmountValue">8px</div>
           </div>
-          <div>
-            <label for="overlayAmount">Dark overlay</label>
-            <div class="slider-wrap">
-              <input type="range" id="overlayAmount" min="0" max="80" step="1" />
-              <div class="slider-value" id="overlayAmountValue">35%</div>
-            </div>
+          <label for="overlayAmount">Dark overlay</label>
+          <div class="slider-row">
+            <input type="range" id="overlayAmount" min="0" max="80" step="1" />
+            <div class="slider-value" id="overlayAmountValue">35%</div>
           </div>
-          <div class="employee-actions">
+          <div class="btn-row">
             <button class="ghost" id="clearBg">Clear background</button>
             <button class="ghost" id="clearLogo">Clear logo</button>
           </div>
-          <div class="preview-note">These uploads and blur settings now save to the shared cloud board so every TV/device gets the same setup.</div>
+          <div class="preview-note">Saved to the cloud, so every TV gets the same look.</div>
         </div>
-      </div>
+      </details>
+
+      <details class="card">
+        <summary>Advanced <span class="summary-hint">Reset</span></summary>
+        <div class="details-body">
+          <p class="muted" style="margin:0 0 12px;">Replaces all employees and stars with the sample demo data. This can't be undone.</p>
+          <button class="danger btn-block" id="resetDemo">Reset demo data</button>
+        </div>
+      </details>
     </aside>
-
-    <main class="main">
-      <section class="toolbar">
-        <div>
-          <h1>Mayster Heating & Air</h1>
-          <p>Editable employee list plus the monthly leaderboard that stays saved after refresh.</p>
-        </div>
-        <div class="toolbar-actions">
-          <button class="ghost tab-button active" id="currentMonthTab">Current month</button>
-          <button class="ghost tab-button" id="archiveTab">Archived months</button>
-          <button class="primary" id="endMonthArchive">End month + archive</button>
-        </div>
-      </section>
-
-      <section class="summary-grid" id="currentMonthView">
-        <div class="panel summary-card"><div class="label">Top performer</div><div class="value" id="topPerformer">—</div></div>
-        <div class="panel summary-card"><div class="label">TV assets</div><div class="value" id="tvAssetStatus">Ready</div></div>
-      </section>
-
-      <section class="content-grid" id="currentBoardView">
-        <div class="panel leaderboard">
-          <div class="section-head">
-            <div>
-              <strong style="font-size:22px;">Monthly leaderboard</strong>
-              <div class="small">One star per review that mentions an employee by name.</div>
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Employee</th>
-                <th>Stars</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-          </table>
-        </div>
-
-        <div style="display:grid; gap:20px;">
-          <div class="big-screen">
-            <div>
-              <img id="tvLogoPreview" class="tv-logo-preview" alt="TV logo preview" style="display:none;" />
-              <div class="small" style="color:rgba(255,255,255,.7);">TV preview</div>
-              <strong id="tvPreviewTitle" style="font-size:26px; display:block; margin-top:6px;">Top 3 this month</strong>
-            </div>
-            <div class="big-screen-board" id="tvPreview"></div>
-            <div style="margin-top:12px;">
-              <span class="pill google">Google</span>
-              <span class="pill facebook">Facebook</span>
-              <span class="pill yelp">Yelp</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel leaderboard hidden" id="archiveView">
-        <div class="section-head">
-          <div>
-            <strong style="font-size:22px;">Archived months</strong>
-            <div class="small">Review a completed month and cast its leaderboard to the TV board.</div>
-          </div>
-          <div class="toolbar-actions">
-            <select id="archiveSelect" style="min-width:220px;"></select>
-            <button class="primary" id="showArchiveOnTv">Show selected month on TV</button>
-            <button class="ghost" id="showCurrentOnTv">Return TV to current month</button>
-          </div>
-        </div>
-        <div id="archiveEmpty" class="preview-note hidden">No archived months yet. Use “End month + archive” when a month is complete.</div>
-        <table id="archiveTable">
-          <thead><tr><th>Rank</th><th>Employee</th><th>Stars</th></tr></thead>
-          <tbody id="archiveLeaderboardBody"></tbody>
-        </table>
-        <div id="archiveSummary" class="small" style="margin-top:14px;"></div>
-      </section>
-    </main>
   </div>
 
   <script>
@@ -616,6 +587,9 @@
       const auth = firebaseAuth();
       if (!auth) return;
       auth.onAuthStateChanged((user) => {
+        $('syncDot').classList.toggle('ok', !!user);
+        $('savePin').textContent = user ? 'Signed in' : 'Sign in with Google';
+        $('savePin').title = user ? user.email : '';
         if (user) setSyncStatus(`Signed in as ${user.email}. Changes auto-save to Firebase.`);
       });
     }
@@ -697,6 +671,18 @@
       return [...state.employees].sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
     }
 
+    function leaderboardRows(employees) {
+      const maxStars = Math.max(1, ...employees.map(e => e.stars));
+      return employees.map((e, i) => `
+        <tr>
+          <td class="col-rank"><span class="rank${i < 3 && e.stars > 0 ? ` r${i + 1}` : ''}">${i + 1}</span></td>
+          <td class="emp-name">${escapeHtml(e.name)}</td>
+          <td class="col-bar"><div class="bar"><span style="width:${Math.round((e.stars / maxStars) * 100)}%"></span></div></td>
+          <td class="col-stars">${e.stars} ★</td>
+        </tr>
+      `).join('');
+    }
+
     function monthLabel(monthKey) {
       const [year, month] = String(monthKey || DEFAULT_MONTH_KEY).split('-').map(Number);
       return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
@@ -727,15 +713,12 @@
       }
       const archive = archiveById(select.value);
       const employees = [...archive.employees].sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
-      $('archiveLeaderboardBody').innerHTML = employees.map((employee, index) => `
-        <tr><td><span class="rank">${index + 1}</span></td><td><strong>${escapeHtml(employee.name)}</strong></td><td class="star-count">${'★'.repeat(Math.min(employee.stars, 8))}<span style="font-size:16px; color:#122033; margin-left:8px;">${employee.stars}</span></td></tr>
-      `).join('');
+      $('archiveLeaderboardBody').innerHTML = leaderboardRows(employees);
       $('archiveSummary').textContent = `${monthLabel(archive.monthKey)} · ${archive.reviews.length} reviews · archived ${new Date(archive.endedAt).toLocaleString()}`;
     }
 
     function setAdminTab(tab) {
       const archiveVisible = tab === 'archive';
-      $('currentMonthView').classList.toggle('hidden', archiveVisible);
       $('currentBoardView').classList.toggle('hidden', archiveVisible);
       $('archiveView').classList.toggle('hidden', !archiveVisible);
       $('currentMonthTab').classList.toggle('active', !archiveVisible);
@@ -847,29 +830,27 @@
       const tvTitle = state.tvDisplay ? `Top 3 · ${monthLabel(state.tvDisplay.monthKey)}` : 'Top 3 this month';
       $('monthLabel').textContent = monthLabel(state.monthKey);
       $('tvPreviewTitle').textContent = tvTitle;
-      $('leaderboardBody').innerHTML = employees.map((e, i) => `
-        <tr>
-          <td><span class="rank">${i + 1}</span></td>
-          <td><strong>${escapeHtml(e.name)}</strong></td>
-          <td class="star-count">${'★'.repeat(Math.min(e.stars, 8))}<span style="font-size:16px; color:#122033; margin-left:8px;">${e.stars}</span></td>
-        </tr>
-      `).join('');
+      $('leaderboardBody').innerHTML = leaderboardRows(employees)
+        || '<tr><td class="muted">No employees yet. Add some under Employees.</td></tr>';
 
       const top3 = tvEmployees.slice(0, 3);
       $('tvPreview').innerHTML = top3.map((e, i) => `
         <div class="big-entry">
-          <div class="small" style="color:rgba(255,255,255,.7);">#${i+1}</div>
+          <div class="pos">#${i+1}</div>
           <strong>${escapeHtml(e.name)}</strong>
-          <div style="font-size:34px; font-weight:800; color:#ffbf47;">${e.stars} ★</div>
+          <div class="pts">${e.stars} ★</div>
         </div>
-      `).join('') || '<div class="small" style="color:rgba(255,255,255,.7);">No employees added yet.</div>';
+      `).join('') || '<div style="color:rgba(255,255,255,.7); font-size:13px;">No employees added yet.</div>';
 
       $('topPerformer').textContent = employees[0]?.name || '—';
       $('reviewCount').textContent = state.reviews.length;
       $('employeeCount').textContent = state.employees.length;
+      $('employeeChip').textContent = state.employees.length;
       const hasBg = !!state.settings.background;
       const hasLogo = !!state.settings.logo;
-      $('tvAssetStatus').textContent = `${hasBg ? 'BG' : 'No BG'} / ${hasLogo ? 'Logo' : 'Text'}`;
+      $('tvAssetStatus').textContent = state.tvDisplay
+        ? `Showing ${monthLabel(state.tvDisplay.monthKey)}`
+        : `${hasBg ? 'Custom BG' : 'Default BG'} · ${hasLogo ? 'Logo' : 'No logo'}`;
       renderTvSettings();
       renderLogoPreview();
     }
@@ -950,6 +931,8 @@
     }
 
     async function removeEmployee(id) {
+      const employee = state.employees.find(e => e.id === id);
+      if (!employee || !window.confirm(`Remove ${employee.name} and all of their stars?`)) return;
       if (!(await ensureSignedIn())) return;
       state.employees = state.employees.filter(e => e.id !== id);
       state.reviews = state.reviews.filter(r => r.employeeId !== id);
@@ -1019,6 +1002,7 @@
     $('removeStar').addEventListener('click', () => fixStar(false));
 
     $('resetDemo').addEventListener('click', async () => {
+      if (!window.confirm('Reset to demo data? This replaces all employees and stars on the shared board.')) return;
       if (!(await ensureSignedIn())) return;
       state = normalizeState({ ...state, employees: structuredClone(defaultEmployees), reviews: structuredClone(defaultReviews), settings: defaultSettings });
       queueCloudSave();
