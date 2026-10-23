@@ -318,6 +318,22 @@
         </div>
       </div>
 
+      <div class="panel review-form">
+        <h3>Fix a star</h3>
+        <div class="field">
+          <label for="fixFromEmployee">Take last star from</label>
+          <select id="fixFromEmployee"></select>
+        </div>
+        <div class="field">
+          <label for="fixToEmployee">Move it to</label>
+          <select id="fixToEmployee"></select>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="primary" id="moveStar">Move star</button>
+          <button class="danger" id="removeStar">Remove star</button>
+        </div>
+      </div>
+
       <div class="panel employee-manager">
         <h3>Manage employees</h3>
         <div class="field">
@@ -753,6 +769,55 @@
         : '<option value="">No employees yet</option>';
       $('employee').disabled = employees.length === 0;
       $('addReview').disabled = employees.length === 0;
+
+      const withStars = employees.filter(e => e.reviewCount > 0);
+      const fromValue = $('fixFromEmployee').value;
+      const toValue = $('fixToEmployee').value;
+      $('fixFromEmployee').innerHTML = withStars.length
+        ? withStars.map(e => `<option value="${e.id}">${escapeHtml(e.name)} (${e.stars} ★)</option>`).join('')
+        : '<option value="">No stars to fix</option>';
+      $('fixToEmployee').innerHTML = employees.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+      if (withStars.some(e => e.id === fromValue)) $('fixFromEmployee').value = fromValue;
+      if (employees.some(e => e.id === toValue)) $('fixToEmployee').value = toValue;
+      $('fixFromEmployee').disabled = withStars.length === 0;
+      $('moveStar').disabled = withStars.length === 0;
+      $('removeStar').disabled = withStars.length === 0;
+    }
+
+    function giveStar(employee, platform, date) {
+      const starsToAdd = employee.reviewCount >= 5 ? 2 : 1;
+      employee.reviewCount += 1;
+      employee.stars += starsToAdd;
+      state.reviews.unshift({ employeeId: employee.id, platform, date });
+    }
+
+    // Undoes the employee's most recent star, including the double-star bonus after 5 reviews.
+    function takeLastStar(employee) {
+      const starsToRemove = employee.reviewCount > 5 ? 2 : 1;
+      employee.reviewCount = Math.max(0, employee.reviewCount - 1);
+      employee.stars = Math.max(0, employee.stars - starsToRemove);
+      const index = state.reviews.findIndex(r => r.employeeId === employee.id);
+      return index === -1 ? null : state.reviews.splice(index, 1)[0];
+    }
+
+    async function fixStar(moveToOther) {
+      if (!(await ensureSignedIn())) return;
+      const from = state.employees.find(e => e.id === $('fixFromEmployee').value);
+      if (!from || from.reviewCount <= 0) return;
+      const to = moveToOther ? state.employees.find(e => e.id === $('fixToEmployee').value) : null;
+      if (moveToOther && (!to || to.id === from.id)) {
+        setSyncStatus('Pick a different employee to move the star to.');
+        return;
+      }
+      const message = moveToOther
+        ? `Move ${from.name}'s last star to ${to.name}?`
+        : `Remove ${from.name}'s last star?`;
+      if (!window.confirm(message)) return;
+      const review = takeLastStar(from);
+      if (to) giveStar(to, review?.platform || $('platform').value, review?.date || new Date().toISOString());
+      queueCloudSave();
+      rerender();
+      setSyncStatus(to ? `Moved a star from ${from.name} to ${to.name}.` : `Removed a star from ${from.name}.`);
     }
 
     function renderEmployeeManager() {
@@ -951,13 +1016,13 @@
       const platform = $('platform').value;
       const employee = state.employees.find(e => e.id === employeeId);
       if (!employee) return;
-      const starsToAdd = employee.reviewCount >= 5 ? 2 : 1;
-      employee.reviewCount += 1;
-      employee.stars += starsToAdd;
-      state.reviews.unshift({ employeeId: employee.id, platform, date: new Date().toISOString() });
+      giveStar(employee, platform, new Date().toISOString());
       queueCloudSave();
       rerender();
     });
+
+    $('moveStar').addEventListener('click', () => fixStar(true));
+    $('removeStar').addEventListener('click', () => fixStar(false));
 
     $('resetDemo').addEventListener('click', async () => {
       if (!(await ensureSignedIn())) return;
