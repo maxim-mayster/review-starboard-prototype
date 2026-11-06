@@ -8,6 +8,7 @@ A practical office dashboard where the review logger and the monthly leaderboard
 - Typography: bold, large operational headings for at-a-glance use
 - Color: dark blue with orange accents to feel service-business friendly
 - Interaction: add-star demo, store filter toggle, reset demo button
+- Recent stars: last star per platform (Google/Facebook/Yelp), the last 15 stars, optional customer name, and a warning before crediting the same customer + platform + employee twice
 
 ### Trade-offs
 - Strong at: showing both data entry and leaderboard in one place
