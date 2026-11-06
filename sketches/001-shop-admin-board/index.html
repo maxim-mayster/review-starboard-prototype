@@ -262,6 +262,27 @@
     .big-entry .pts { font-size: 18px; font-weight: 800; color: #ffbf47; }
     .tv-logo-preview { max-width: 100%; max-height: 44px; object-fit: contain; display: block; margin-bottom: 8px; }
 
+    /* Recent stars */
+    .recent-card { margin-top: 20px; }
+    .last-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 16px 20px 4px; }
+    .last-tile { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #f9fbfd; min-width: 0; }
+    .last-tile .label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .last-tile .who { font-weight: 800; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .last-tile .meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pf-google { color: #1a73e8; }
+    .pf-facebook { color: #1877f2; }
+    .pf-yelp { color: #d32323; }
+    .pf-badge { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 99px; background: #eef3f9; white-space: nowrap; }
+    .recent-list td { padding: 10px 8px; font-size: 14px; }
+    .recent-list .col-pf { width: 92px; }
+    .recent-list .col-when { text-align: right; color: var(--ink-soft); font-size: 13px; white-space: nowrap; }
+    .recent-list .customer { color: var(--ink-soft); }
+    .recent-list .no-customer { color: #a3b2c3; font-style: italic; }
+    .last-hint { font-size: 13px; color: var(--ink-soft); background: #f5f8fc; border-radius: 10px; padding: 9px 11px; margin-bottom: 12px; line-height: 1.4; }
+    .last-hint strong { color: var(--ink); }
+    .dup-warn { font-size: 13px; color: #8a5a00; background: #fff6dc; border: 1px solid #f3dc9a; border-radius: 10px; padding: 9px 11px; margin-bottom: 12px; line-height: 1.4; }
+    .optional { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--ink-soft); }
+
     @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; }
       .side { display: contents; }
@@ -275,6 +296,8 @@
       .col-bar { display: none; }
       .stat .value { font-size: 19px; white-space: normal; }
       .board-head, .board-body { padding-left: 14px; padding-right: 14px; }
+      .last-grid { grid-template-columns: 1fr; padding: 14px 14px 4px; }
+      .recent-list .col-pf { width: 78px; }
     }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -338,6 +361,22 @@
           <div id="archiveSummary" class="muted" style="margin-top:12px;"></div>
         </div>
       </section>
+
+      <section class="card recent-card">
+        <div class="board-head">
+          <h2 class="card-title" style="margin:0;">Recent stars</h2>
+          <div class="tabs" id="recentTabs">
+            <button class="tab active" data-recent-filter="All">All</button>
+            <button class="tab" data-recent-filter="Google">Google</button>
+            <button class="tab" data-recent-filter="Facebook">Facebook</button>
+            <button class="tab" data-recent-filter="Yelp">Yelp</button>
+          </div>
+        </div>
+        <div class="last-grid" id="lastByPlatform"></div>
+        <div class="board-body">
+          <table class="recent-list"><tbody id="recentBody"></tbody></table>
+        </div>
+      </section>
     </main>
 
     <aside class="side">
@@ -355,6 +394,12 @@
             <option>Yelp</option>
           </select>
         </div>
+        <div class="last-hint" id="lastHint"></div>
+        <div class="field">
+          <label for="customerName">Customer name <span class="optional">(optional)</span></label>
+          <input id="customerName" placeholder="Name on the review, e.g. Jane D." autocomplete="off" />
+        </div>
+        <div class="dup-warn hidden" id="dupWarn"></div>
         <button class="primary btn-block" id="addReview">★ Add star</button>
       </section>
 
@@ -764,11 +809,108 @@
       $('removeStar').disabled = withStars.length === 0;
     }
 
-    function giveStar(employee, platform, date) {
+    function giveStar(employee, platform, date, customer = '') {
       const starsToAdd = employee.reviewCount >= 5 ? 2 : 1;
       employee.reviewCount += 1;
       employee.stars += starsToAdd;
-      state.reviews.unshift({ employeeId: employee.id, platform, date });
+      const review = { employeeId: employee.id, platform, date };
+      if (customer) review.customer = customer;
+      state.reviews.unshift(review);
+    }
+
+    const PLATFORMS = ['Google', 'Facebook', 'Yelp'];
+    let recentFilter = 'All';
+
+    function employeeName(id) {
+      return state.employees.find(e => e.id === id)?.name || 'Removed employee';
+    }
+
+    function normalizeCustomer(name) {
+      return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function formatWhen(date) {
+      if (!date) return 'Earlier';
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return 'Earlier';
+      const now = new Date();
+      const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      const startOfDay = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+      const days = Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
+      if (days === 0) return `Today ${time}`;
+      if (days === 1) return `Yesterday ${time}`;
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ` ${time}`;
+    }
+
+    // Reviews are stored newest first, so the first match is the latest.
+    function lastReview(platform) {
+      return state.reviews.find(r => r.platform === platform) || null;
+    }
+
+    // Same customer + platform already credited this month (any employee).
+    function matchingReviews(customer, platform) {
+      const key = normalizeCustomer(customer);
+      if (!key) return [];
+      return state.reviews.filter(r => r.platform === platform && normalizeCustomer(r.customer) === key);
+    }
+
+    function pfClass(platform) {
+      return `pf-${String(platform || '').toLowerCase()}`;
+    }
+
+    function renderLastHint() {
+      const platform = $('platform').value;
+      const last = lastReview(platform);
+      $('lastHint').innerHTML = last
+        ? `Last ${escapeHtml(platform)} star: <strong>${escapeHtml(employeeName(last.employeeId))}</strong>`
+          + (last.customer ? ` for <strong>${escapeHtml(last.customer)}</strong>` : '')
+          + ` · ${escapeHtml(formatWhen(last.date))}`
+        : `No ${escapeHtml(platform)} stars yet this month.`;
+    }
+
+    function renderDupWarning() {
+      const customer = $('customerName').value.trim();
+      const platform = $('platform').value;
+      const employeeId = $('employee').value;
+      const matches = matchingReviews(customer, platform);
+      const box = $('dupWarn');
+      if (!matches.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+      const same = matches.find(r => r.employeeId === employeeId);
+      const names = [...new Set(matches.map(r => employeeName(r.employeeId)))].map(escapeHtml).join(', ');
+      box.innerHTML = same
+        ? `Heads up: <strong>${escapeHtml(employeeName(employeeId))}</strong> already got a star for ${escapeHtml(customer)}'s ${escapeHtml(platform)} review (${escapeHtml(formatWhen(same.date))}).`
+        : `${escapeHtml(customer)}'s ${escapeHtml(platform)} review was already credited to ${names}. Fine if it names more than one tech.`;
+      box.classList.remove('hidden');
+    }
+
+    function renderRecentStars() {
+      $('lastByPlatform').innerHTML = PLATFORMS.map(platform => {
+        const last = lastReview(platform);
+        return `
+          <div class="last-tile">
+            <div class="label ${pfClass(platform)}">Last on ${escapeHtml(platform)}</div>
+            <div class="who">${last ? escapeHtml(employeeName(last.employeeId)) : '—'}</div>
+            <div class="meta">${last
+              ? `${last.customer ? escapeHtml(last.customer) + ' · ' : ''}${escapeHtml(formatWhen(last.date))}`
+              : 'None yet this month'}</div>
+          </div>`;
+      }).join('');
+
+      document.querySelectorAll('[data-recent-filter]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.recentFilter === recentFilter);
+      });
+      const rows = state.reviews
+        .filter(r => recentFilter === 'All' || r.platform === recentFilter)
+        .slice(0, 15);
+      $('recentBody').innerHTML = rows.length
+        ? rows.map(r => `
+          <tr>
+            <td class="col-pf"><span class="pf-badge ${pfClass(r.platform)}">${escapeHtml(r.platform || '—')}</span></td>
+            <td><span class="emp-name">${escapeHtml(employeeName(r.employeeId))}</span>
+              ${r.customer ? `<span class="customer"> · ${escapeHtml(r.customer)}</span>` : '<span class="no-customer"> · no customer name</span>'}</td>
+            <td class="col-when">${escapeHtml(formatWhen(r.date))}</td>
+          </tr>`).join('')
+        : `<tr><td class="muted">No ${recentFilter === 'All' ? '' : escapeHtml(recentFilter) + ' '}stars yet this month.</td></tr>`;
     }
 
     // Undoes the employee's most recent star, including the double-star bonus after 5 reviews.
@@ -794,7 +936,7 @@
         : `Remove ${from.name}'s last star?`;
       if (!window.confirm(message)) return;
       const review = takeLastStar(from);
-      if (to) giveStar(to, review?.platform || $('platform').value, review?.date || new Date().toISOString());
+      if (to) giveStar(to, review?.platform || $('platform').value, review?.date || new Date().toISOString(), review?.customer || '');
       queueCloudSave();
       rerender();
       setSyncStatus(to ? `Moved a star from ${from.name} to ${to.name}.` : `Removed a star from ${from.name}.`);
@@ -972,6 +1114,9 @@
       renderEmployeeOptions();
       renderEmployeeManager();
       renderBoard();
+      renderRecentStars();
+      renderLastHint();
+      renderDupWarning();
       if (!$('archiveView').classList.contains('hidden')) renderArchiveView();
     }
 
@@ -993,9 +1138,24 @@
       const platform = $('platform').value;
       const employee = state.employees.find(e => e.id === employeeId);
       if (!employee) return;
-      giveStar(employee, platform, new Date().toISOString());
+      const customer = $('customerName').value.trim().replace(/\s+/g, ' ');
+      const already = matchingReviews(customer, platform).find(r => r.employeeId === employee.id);
+      if (already && !window.confirm(`${employee.name} already got a star for ${customer}'s ${platform} review (${formatWhen(already.date)}). Add another one anyway?`)) return;
+      giveStar(employee, platform, new Date().toISOString(), customer);
+      $('customerName').value = '';
       queueCloudSave();
       rerender();
+      setSyncStatus(`Added a ${platform} star for ${employee.name}${customer ? ` (${customer})` : ''}.`);
+    });
+
+    $('platform').addEventListener('change', () => { renderLastHint(); renderDupWarning(); });
+    $('employee').addEventListener('change', renderDupWarning);
+    $('customerName').addEventListener('input', renderDupWarning);
+    $('customerName').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') $('addReview').click();
+    });
+    document.querySelectorAll('[data-recent-filter]').forEach(btn => {
+      btn.addEventListener('click', () => { recentFilter = btn.dataset.recentFilter; renderRecentStars(); });
     });
 
     $('moveStar').addEventListener('click', () => fixStar(true));
